@@ -1,0 +1,71 @@
+{
+  "height": 280,
+  "frames": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 443,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 886,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 1329,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 0,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 443,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 886,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    },
+    {
+      "x": 1329,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 280,
+      "baseline": 410
+    }
+  ],
+  "source": "exec-8c408b9c-077c-4f09-be31-a54b0ca87466.png",
+  "note": "Shared body anchor/scale across every frame; wings do not affect body sizing. No pixel editing."
+}

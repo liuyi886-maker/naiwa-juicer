@@ -1,0 +1,2 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync,existsSync,statSync} from 'node:fs';
+test('all published runtime assets exist and private data is excluded',()=>{const files=JSON.parse(readFileSync('runtime-assets.json'));for(const f of files){assert.ok(existsSync('public/'+f),f);assert.ok(statSync('public/'+f).size<25*1024*1024,f);}for(const f of ['.private','server','checkpoints','references'])assert.equal(existsSync('public/'+f),false);});

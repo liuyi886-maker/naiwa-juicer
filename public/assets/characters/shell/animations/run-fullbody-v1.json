@@ -1,0 +1,121 @@
+{
+  "height": 248,
+  "frames": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 236.5,
+      "baseline": 390,
+      "bounds": [
+        43,
+        122,
+        430,
+        390
+      ]
+    },
+    {
+      "x": 443,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 238.5,
+      "baseline": 385,
+      "bounds": [
+        49,
+        137,
+        428,
+        385
+      ]
+    },
+    {
+      "x": 886,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 212.5,
+      "baseline": 371,
+      "bounds": [
+        8,
+        115,
+        417,
+        371
+      ]
+    },
+    {
+      "x": 1329,
+      "y": 0,
+      "w": 443,
+      "h": 443,
+      "anchorX": 223.0,
+      "baseline": 363,
+      "bounds": [
+        29,
+        109,
+        417,
+        351
+      ]
+    },
+    {
+      "x": 0,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 230.0,
+      "baseline": 348,
+      "bounds": [
+        30,
+        98,
+        430,
+        348
+      ]
+    },
+    {
+      "x": 443,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 236.0,
+      "baseline": 345,
+      "bounds": [
+        45,
+        100,
+        427,
+        345
+      ]
+    },
+    {
+      "x": 886,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 219.0,
+      "baseline": 338,
+      "bounds": [
+        17,
+        90,
+        421,
+        338
+      ]
+    },
+    {
+      "x": 1329,
+      "y": 443,
+      "w": 443,
+      "h": 443,
+      "anchorX": 225.5,
+      "baseline": 330,
+      "bounds": [
+        34,
+        80,
+        417,
+        318
+      ]
+    }
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "exec-94a40345-b1c5-4281-a1a0-49eb333449d4.png",
+  "method": "Whole-body frames; alpha bounds used only for metadata anchors. No pixel editing."
+}

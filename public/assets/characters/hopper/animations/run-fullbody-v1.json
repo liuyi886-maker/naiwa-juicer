@@ -1,0 +1,121 @@
+{
+  "height": 380,
+  "frames": [
+    {
+      "x": 0,
+      "y": 0,
+      "w": 384,
+      "h": 512,
+      "anchorX": 216.0,
+      "baseline": 490,
+      "bounds": [
+        58,
+        97,
+        374,
+        490
+      ]
+    },
+    {
+      "x": 384,
+      "y": 0,
+      "w": 384,
+      "h": 512,
+      "anchorX": 225.5,
+      "baseline": 484,
+      "bounds": [
+        84,
+        136,
+        367,
+        484
+      ]
+    },
+    {
+      "x": 768,
+      "y": 0,
+      "w": 384,
+      "h": 512,
+      "anchorX": 188.0,
+      "baseline": 490,
+      "bounds": [
+        39,
+        71,
+        337,
+        490
+      ]
+    },
+    {
+      "x": 1152,
+      "y": 0,
+      "w": 384,
+      "h": 512,
+      "anchorX": 195.5,
+      "baseline": 451,
+      "bounds": [
+        56,
+        74,
+        335,
+        439
+      ]
+    },
+    {
+      "x": 0,
+      "y": 512,
+      "w": 384,
+      "h": 512,
+      "anchorX": 217.0,
+      "baseline": 453,
+      "bounds": [
+        50,
+        73,
+        384,
+        453
+      ]
+    },
+    {
+      "x": 384,
+      "y": 512,
+      "w": 384,
+      "h": 512,
+      "anchorX": 183.5,
+      "baseline": 453,
+      "bounds": [
+        0,
+        109,
+        367,
+        453
+      ]
+    },
+    {
+      "x": 768,
+      "y": 512,
+      "w": 384,
+      "h": 512,
+      "anchorX": 192.5,
+      "baseline": 448,
+      "bounds": [
+        38,
+        49,
+        347,
+        448
+      ]
+    },
+    {
+      "x": 1152,
+      "y": 512,
+      "w": 384,
+      "h": 512,
+      "anchorX": 202.5,
+      "baseline": 403,
+      "bounds": [
+        61,
+        50,
+        344,
+        391
+      ]
+    }
+  ],
+  "columns": 4,
+  "rows": 2,
+  "source": "exec-250b3b56-967f-4f46-b4d2-3093942abb2f.png",
+  "method": "Whole-body frames; alpha bounds used only for metadata anchors. No pixel editing."
+}

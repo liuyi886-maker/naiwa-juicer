@@ -135,3 +135,14 @@
 .loading-card button{display:block;margin:18px auto 0;border:1px solid #d7cc85;border-radius:12px;padding:10px 26px;color:#fff7d8;background:#66863b;font-size:16px;font-weight:800}
 .loading-card button[hidden]{display:none}
 @media(prefers-reduced-motion:reduce){.loading-orbit{animation:none}}
+
+/* This is a game surface: holding controls must not select HUD/reward text or zoom the page. */
+.game-shell,.game-shell *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.game-shell{touch-action:none;overscroll-behavior:none}
+.game-shell img,.game-shell svg{-webkit-user-drag:none}
+.touch-controls button,.touch-controls button *{touch-action:none}
+.touch-controls button svg,.touch-controls button svg *{pointer-events:none}
+/* Dialogs live outside the game surface and retain native scrolling/form interactions. */
+dialog{touch-action:pan-x pan-y pinch-zoom}
+dialog button{touch-action:manipulation}
+.game-shell input,.game-shell textarea,.game-shell [contenteditable]:not([contenteditable="false"]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:manipulation}

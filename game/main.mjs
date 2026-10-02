@@ -1,4 +1,6 @@
 import {trackGameStart} from './analytics.mjs';
+import {installGameGestures} from './game-gestures.mjs';
+import {bindTouchControls} from './touch-controls.mjs';
 import {loadHunt,loadWorkshop} from './scene-assets.mjs?v=mobile-load-13';
 import {PlayerStore,snapshotGame,restoreGame} from './player-store.mjs?v=static-14';
 import {RECIPES,drawProduct,productImagePath} from './products.mjs?v=mobile-load-13';
@@ -168,7 +170,8 @@ function render(t){
  c.restore();
 }
 function updateHud(){$('#huntRemaining').textContent=`剩余 ${game.remaining} · 逃走 ${game.escaped}`;$('#score').textContent=`${game.caught} / ${game.prey.length}`;$('#captureFill').style.width=`${game.caught/game.prey.length*100}%`;$('#baitCount').textContent=game.baitCount;$('#fuelFill').style.width=`${game.player.fuel}%`;$('#reload').textContent=game.player.charging?(game.player.charge>=.85?'蓄力完成':'按住蓄力…'):game.shots.length?(game.shots[0].phase==='outbound'?'鱼叉飞行中':game.shots[0].phase==='tethered'?'等待气球接管':'正在收回鱼叉'):game.player.cooldown>0?`装填中 · ${game.player.cooldown.toFixed(1)} 秒`:'按住蓄力';$('#fireButton').classList.toggle('busy',!!game.shots.length||game.player.cooldown>0);$('#fireButton').classList.toggle('reloading',game.player.cooldown>0);$('#fireButton').style.setProperty('--reload-progress',`${(1-game.player.cooldown/(game.player.reloadDuration||1))*100}%`);$('#fireButton').setAttribute('aria-disabled',String(!!game.shots.length||game.player.cooldown>0));$('#fireButton').classList.toggle('charging',game.player.charging);$('#fireButton').style.setProperty('--charge',`${Math.min(1,game.player.charge/.85)*100}%`);}
-function clearInput(){game.cancelCharge();for(const k in input){input[k]=false;pulses[k]=0;}$$('[data-hold]').forEach(b=>b.classList.remove('pressed'));}
+let touchInput;
+function clearInput(){touchInput?.reset();game.cancelCharge();for(const k in input){input[k]=false;pulses[k]=0;}$$('[data-hold]').forEach(b=>b.classList.remove('pressed'));}
 function togglePause(force){if(!running||scene!=='hunt')return;paused=force??!paused;clearInput();$('#pauseOverlay').classList.toggle('hidden',!paused);save();}
 function setLabFocus(active){for(const el of $('#workshop').parentElement.children)if(el.id!=='workshop')el.inert=active;}
 function start(resume=false,demo=false){
@@ -277,21 +280,15 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('keyup',e=>{if(keys[e.code])input[keys[e.code]]=false;if(e.code==='KeyJ'&&running&&!paused)game.releaseCharge();});
 window.addEventListener('blur',()=>{clearInput();if(running)togglePause(true);});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&running)togglePause(true);});
-for(const b of $$('[data-hold]')){
- let since=0,pointer=null;
- b.onpointerdown=e=>{e.preventDefault();if(!running||paused)return;autoplay=false;canvas.focus();audio.unlock();since=performance.now();pointer=e.pointerId;input[b.dataset.hold]=true;b.classList.add('pressed');b.setPointerCapture(e.pointerId);};
- b.onpointerup=e=>{if(pointer!==e.pointerId)return;input[b.dataset.hold]=false;pulses[b.dataset.hold]=Math.max(0,.18-(performance.now()-since)/1000);pointer=null;b.classList.remove('pressed');};
- b.onpointercancel=b.onlostpointercapture=()=>{if(pointer!==null){input[b.dataset.hold]=false;pointer=null;b.classList.remove('pressed');}};
-}
-for(const b of $$('[data-action]')){
- let pointer=null;
- b.onpointerdown=e=>{e.preventDefault();if(!running||paused)return;autoplay=false;canvas.focus();audio.unlock();
-  if(b.dataset.action==='fire'){if(game.beginCharge()){pointer=e.pointerId;b.setPointerCapture(pointer);}}
-  else game.dropBait();
- };
- b.onpointerup=e=>{if(pointer===e.pointerId){pointer=null;game.releaseCharge();}};
- b.onpointercancel=b.onlostpointercapture=()=>{if(pointer!==null){pointer=null;game.cancelCharge();}};
-}
+installGameGestures($('.game-shell'),{isPlaying:()=>running&&!paused&&scene==='hunt'});
+touchInput=bindTouchControls($('#touchControls'),{
+ isActive:()=>running&&!paused&&scene==='hunt',
+ onInteract:()=>{autoplay=false;canvas.focus({preventScroll:true});audio.unlock();},
+ onHold:(key,held)=>{input[key]=held;},
+ onTapPulse:(key,duration)=>{pulses[key]=duration;},
+ onBeginFire:()=>game.beginCharge(),onReleaseFire:()=>game.releaseCharge(),onCancelFire:()=>game.cancelCharge(),
+ onBait:()=>game.dropBait()
+});
 let hudTick=0,labTick=0;
 function frame(ms){
  if(document.hidden){last=ms;audio.musicTick(false);requestAnimationFrame(frame);return;}

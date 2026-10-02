@@ -1,4 +1,4 @@
-const CACHE='naiwa-static-4d014726a7f7';
+const CACHE='naiwa-static-dfd3f799a208';
 const PREFIX='naiwa-static-';
 const scope=new URL(self.registration.scope);
 self.addEventListener('install',event=>{

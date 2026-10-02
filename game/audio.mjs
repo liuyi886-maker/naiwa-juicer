@@ -45,7 +45,7 @@ export class AudioEngine {
    this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:'assets/audio/naiwaxxl-bgm-original.mp3',mirrors:audioMirrors,onStatus:status=>this.onMusicStatus?.(status)});
    this.ctx.onstatechange=()=>{if(this.ctx.state==='running'){this.effectsTarget=undefined;this.musicTarget=undefined;}};
   }
-  this.resume();this.music?.play({retry:true});
+  this.resume();if(typeof document==='undefined'||!document.hidden)this.music?.play({retry:true});
   if(!this.laughReady&&!this.laugh)this.laughReady=this.loadBuffer('assets/characters/basic/taunt/reference/laugh-original.wav').then(b=>{this.laugh=b;}).catch(()=>{}).finally(()=>{this.laughReady=null;});
   return Promise.all([this.laughReady,this.loadHitVoices()]);
  }

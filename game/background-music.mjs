@@ -31,5 +31,5 @@ export class BackgroundMusic {
    else if(error.name!=='AbortError'&&this.desired)this.nextSource();
   });
  }
- setActive(active){if(active){if(!this.desired)this.play();}else if(this.desired){this.desired=false;this.clearWatch();this.media.pause();this.setStatus('paused');}}
+ setActive(active){if(active){if(!this.desired)this.play();}else if(this.desired){this.desired=false;this.generation++;this.pending=false;this.clearWatch();this.media.pause();this.setStatus('paused');}}
 }

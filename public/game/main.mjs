@@ -1,6 +1,6 @@
 import {PlayerStore,snapshotGame,restoreGame} from './player-store.mjs?v=backend-9';
 import {RECIPES,drawProduct,loadProductArt,productImagePath} from './products.mjs?v=hunt-fixes-7';
-import {SPECIES,speciesFor} from './species.mjs?v=hunt-fixes-7';
+import {SPECIES,speciesFor} from './species.mjs?v=hunter-avoidance-12';
 let albumActionStart=0;
 import {loadBrandArt} from './brand.mjs?v=hunt-fixes-7';
 import {compressionPose} from './compression.mjs?v=hunt-fixes-7';
@@ -10,7 +10,7 @@ import {emergencePose,drawBurrow} from './emergence.mjs?v=hunt-fixes-7';
 import {Laboratory,renderLab} from './lab.mjs?v=hunt-fixes-7';
 import {drawHunter,drawDog,drawPrey,loadSpeciesSprites,drawCaptureResistance} from './character-rigs.mjs?v=hunt-fixes-7';
 import {drawRecoveryCraft,drawCaptureBalloon,drawHarpoon} from './recovery-render.mjs?v=hunt-fixes-7';
-import {Game,WORLD,PONDS,PLATFORMS,LAND,groundAt,CAPTURE_STATES} from './engine.mjs?v=hunt-fixes-7';
+import {Game,WORLD,PONDS,PLATFORMS,LAND,groundAt,CAPTURE_STATES} from './engine.mjs?v=hunter-avoidance-12';
 import {AudioEngine} from './audio.mjs?v=hit-voices-8';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#game'),c=canvas.getContext('2d'),preview=$('#preview'),pc=preview.getContext('2d');

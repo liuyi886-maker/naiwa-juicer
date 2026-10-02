@@ -1,5 +1,5 @@
 import {drawWholeRunner,drawWholePose,runFrame} from './fullbody.mjs?v=hunt-fixes-7';
-import {speciesFor} from './species.mjs?v=hunt-fixes-7';
+import {speciesFor} from './species.mjs?v=hunter-avoidance-12';
 import {RUN_CYCLE} from './motion.mjs?v=hunt-fixes-7';
 const TAU=Math.PI*2;
 export function gaitFoot(phase){

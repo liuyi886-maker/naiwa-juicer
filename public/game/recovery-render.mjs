@@ -1,6 +1,6 @@
-import {capturePoint,speciesFor} from './species.mjs?v=hunt-fixes-7';
+import {capturePoint,speciesFor} from './species.mjs?v=hunter-avoidance-12';
 import {drawPeachHead} from './brand.mjs?v=hunt-fixes-7';
-import {MUZZLE} from './engine.mjs?v=hunt-fixes-7';
+import {MUZZLE} from './engine.mjs?v=hunter-avoidance-12';
 const path=(c,points,fill,stroke,width=2)=>{c.beginPath();points(c);if(fill){c.fillStyle=fill;c.fill();}if(stroke){c.strokeStyle=stroke;c.lineWidth=width;c.stroke();}};
 const box=(c,x,y,w,h,r,fill,stroke,width=2)=>path(c,c=>c.roundRect(x,y,w,h,r),fill,stroke,width);
 const oval=(c,x,y,rx,ry,fill,stroke,width=2)=>path(c,c=>c.ellipse(x,y,rx,ry,0,0,Math.PI*2),fill,stroke,width);

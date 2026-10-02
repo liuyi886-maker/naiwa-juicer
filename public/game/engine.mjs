@@ -1,4 +1,4 @@
-import {speciesFor,ENCOUNTER_SPECIES,capturePoint,escapeSpeed,birdFlightHeight} from './species.mjs?v=hunt-fixes-7';
+import {speciesFor,ENCOUNTER_SPECIES,capturePoint,escapeSpeed,birdFlightHeight} from './species.mjs?v=hunter-avoidance-12';
 import {TAUNT_DURATION,TAUNT_APPROACH,ESCAPE_JUMP_DURATION,escapeJumpOffset} from './taunt.mjs?v=hunt-fixes-7';
 import {approach,updatePose} from './motion.mjs?v=hunt-fixes-7';
 import {EMERGE_SECONDS} from './emergence.mjs?v=hunt-fixes-7';
@@ -223,6 +223,16 @@ export class Game {
       const habitat=LAND.find(s=>z.home>=s.x&&z.home<=s.end);
       const b=this.baits.filter(b=>b.landed&&b.x>habitat.x+35&&b.x<habitat.end-35&&Math.abs(b.x-z.home)<320).sort((a,b)=>Math.abs(a.x-z.x)-Math.abs(b.x-z.x))[0];
       const near=Math.abs(p.x-z.x)<330&&Math.abs(p.y-z.y)<190;const oldX=z.x;
+      // Fear follows the hunter's position, including an airborne interception.
+      // A body-width dead zone and short turn lock prevent close-range flip-flopping.
+      if(['startle','run','taunt'].includes(z.state)&&z.turnLock===0&&
+         (p.x-z.x)*z.dir>65&&Math.abs(p.x-z.x)<330&&Math.abs(p.y-z.y)<360){
+        z.dir*=-1;z.turnLock=.35;z.escapeTime=0;
+        if(z.state==='taunt'){
+          z.state='run';z.timer=0;delete z.tauntExit;delete z.tauntDuration;
+          delete z.tauntSpeed;delete z.escapeFloor;z.flightLanding=false;
+        }
+      }
       if(z.state==='hidden'&&b){z.state='emerging';z.timer=0;this.emit('emerge',{x:z.x});}
       else if(z.state==='emerging'&&z.timer>EMERGE_SECONDS){z.state='notice';z.timer=0;}
       else if(z.state==='notice'&&z.timer>.38){z.state='walk';z.timer=0;}
@@ -235,7 +245,7 @@ export class Game {
         }else {z.state='idle';if(z.timer>7){z.state='run';z.dir=Math.sign(z.x-p.x)||z.dir;z.timer=0;}}
       }else if(z.state==='startle'&&z.timer>(z.species==='hopper'?.22:.5)){z.state='run';z.timer=0;}
       else if(z.state==='run'){
-        // Direction is chosen when startled, and stays fixed for this entire escape.
+        // Recompute the escape shore after a hunter interception changes direction.
         const exitX=z.dir>0?Math.min(WORLD.width-70,habitat.end-38):Math.max(70,habitat.x+38);
         const distance=(exitX-z.x)*z.dir,atExit=distance<=0;
         if(distance<=TAUNT_APPROACH){

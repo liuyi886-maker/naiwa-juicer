@@ -115,3 +115,23 @@
  body.game-entered #recipeDialog{width:min(1050px,94dvh);max-width:94dvh;max-height:90dvw}
  body.game-entered #preview{max-height:42dvw}
 }
+
+/* Loading feedback remains visible even when external artwork or the game script stalls. */
+.home-preview{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none}
+.home-poster:not(.poster-ready) .home-hit{background:linear-gradient(#719945,#3c6535);border:2px solid #a3be60;color:#fff3bc;box-shadow:0 4px #143a28}
+.home-poster:not(.poster-ready) .home-hit span{position:static;width:auto;height:auto;clip:auto;clip-path:none;overflow:visible;white-space:normal;font-size:clamp(18px,3cqw,34px);font-weight:900}
+.loading-panel{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;background:#102e298c;backdrop-filter:blur(3px)}
+.loading-panel[hidden]{display:none}
+.loading-card{width:min(440px,80%);box-sizing:border-box;text-align:center;padding:28px 24px;border:2px solid #c0ae62;border-radius:24px;background:linear-gradient(145deg,#234e43f5,#122e29fa);box-shadow:0 14px 44px #09211d99;color:#fff3c6}
+.loading-brand{display:block;font-size:clamp(20px,3cqw,30px);font-weight:900;letter-spacing:2px;color:#f8d568}
+.loading-orbit{display:block;width:26px;height:26px;margin:20px auto 14px;border:4px solid #88a76a44;border-top-color:#f7d15e;border-radius:50%;animation:loading-spin 1s linear infinite}
+@keyframes loading-spin{to{transform:rotate(360deg)}}
+.loading-card h2{font-size:clamp(17px,2.1cqw,23px);margin:0 0 14px;color:#fff1c4}
+.loading-card progress{display:block;width:100%;height:13px;border:0;border-radius:10px;overflow:hidden;accent-color:#eac34f;background:#0d2722}
+.loading-card progress::-webkit-progress-bar{background:#0d2722;border-radius:10px}
+.loading-card progress::-webkit-progress-value{background:linear-gradient(90deg,#90bd57,#f0d064);border-radius:10px;transition:width .2s}
+.loading-card p{font-size:14px;line-height:1.6;min-height:23px;margin:13px 0 5px;color:#e2e9ca}
+.loading-card small{font-size:12px;color:#b8c5a5}
+.loading-card button{display:block;margin:18px auto 0;border:1px solid #d7cc85;border-radius:12px;padding:10px 26px;color:#fff7d8;background:#66863b;font-size:16px;font-weight:800}
+.loading-card button[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.loading-orbit{animation:none}}

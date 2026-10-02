@@ -15,8 +15,9 @@ import {Game,WORLD,PONDS,PLATFORMS,LAND,groundAt,CAPTURE_STATES} from './engine.
 import {AudioEngine} from './audio.mjs?v=hit-voices-8';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#game'),c=canvas.getContext('2d'),preview=$('#preview'),pc=preview.getContext('2d');
+window.naiwaLoader?.moduleReady();
 const images={};let assetsLoaded=false;
-function load(){return loadHunt(images,(done,total)=>{$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
+function load(){return loadHunt(images,(done,total)=>{window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
 // Start art downloads while the cloud save is being read, rather than afterwards.
 let huntLoad=load();huntLoad.catch(()=>{});
 const playerStore=new PlayerStore();
@@ -35,7 +36,7 @@ const lab=new Laboratory(labData),lc=$('#labCanvas').getContext('2d');
 function roundRecord(status='playing',state=game,meta=currentRound){return meta?{id:meta.id,status,duration:state.time,caught:state.caught,delivered:state.delivered,escaped:state.escaped,total:state.prey.length,demo:!!meta.demo}:null;}
 function rememberRound(status,state=game,meta=currentRound){const record=roundRecord(status,state,meta);if(!record)return;playerStore.recordRound(record);if(status!=='playing'){roundHistory=[{...record,endedAt:Date.now()},...roundHistory.filter(r=>r.id!==record.id)].slice(0,100);}}
 function save(){if(playerStore.conflict)return;const active=running&&!game.finished&&currentRound?{...currentRound,game:snapshotGame(game)}:savedRound;playerStore.save({bank,level,lab:lab.serialize(),round:active,history:roundHistory,sound:audio.enabled});updateBank();}
-playerStore.onStatus=message=>{if($('#saveStatus'))$('#saveStatus').textContent=message;if(playerStore.conflict){togglePause(true);toast(message);}};
+playerStore.onStatus=message=>{if(assetsLoaded&&$('#saveStatus'))$('#saveStatus').textContent=message;if(playerStore.conflict){togglePause(true);toast(message);}};
 function updateBank(){$('#coins').textContent=bank;$('#levelLabel').textContent=`Lv.${level+1}`;$('#upgradeBtn').textContent=level>=3?'装填速度已升满':`升级装填速度 · ${80+level*40} 金币`;$('#upgradeBtn').disabled=level>=3||bank<80+level*40;}
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');toastTimer=3;}
 const game=new Game({level,onEvent:e=>{
@@ -308,9 +309,9 @@ function frame(ms){
  requestAnimationFrame(frame);
 }
 makeButtons();updateBank();$('#touchControls').classList.add('hidden');$('#statusBar').classList.add('hidden');requestAnimationFrame(frame);
-function finishLoading(promise){promise.then(()=>{assetsLoaded=true;$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
+function finishLoading(promise){promise.then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
 finishLoading(huntLoad);
-$('#retryAssets').onclick=()=>{$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
+$('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
 
 playerStore.beforeLeave=()=>{save();if(running)rememberRound();};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(running)rememberRound();}});

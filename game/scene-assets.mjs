@@ -6,6 +6,7 @@ export const HUNT_IMAGES={hunterRig:'characters/hunter/animations/motion-fullbod
 export const WORKSHOP_IMAGES={labBg:'environment/lab/room-v2',shopBg:'environment/shop/store-v2',shopCustomers:'environment/shop/customers-v1'};
 export async function loadHunt(images,onProgress=()=>{}){
  let completed=0;const total=Object.keys(HUNT_IMAGES).length+10;
+ onProgress(0,total);
  const done=()=>onProgress(++completed,total);
  await Promise.all([
   ...Object.entries(HUNT_IMAGES).map(async([key,path])=>{const [image,meta]=await Promise.all([assets.image(`assets/${path}.webp`),['hunterRig','preyRig','dogRig','tauntFrames'].includes(key)?assets.json(`assets/${path}.json`):null]);images[key]=image;if(meta){image.runAtlas=image;image.runMeta=meta;}done();}),

@@ -52,7 +52,7 @@
  const bootTimer=setTimeout(()=>{if(!moduleLoaded){title.textContent='连接游戏资源较慢';detail.textContent='请检查网络后重试，已保存的进度不会被清除。';retry.hidden=false;}},20000);
  window.naiwaLoader={
   moduleReady(){moduleLoaded=true;clearTimeout(bootTimer);},
-  progress(done,total){if(ready)return;failed=false;retry.hidden=true;bar.max=total;bar.value=done;title.textContent=`游戏加载中 · ${Math.min(100,Math.round(done/total*100))}%`;detail.textContent=`正在准备角色与场景 ${done} / ${total}`;slow();},
+  progress(done,total){if(ready||failed)return;retry.hidden=true;bar.max=total;bar.value=done;title.textContent=`游戏加载中 · ${Math.min(100,Math.round(done/total*100))}%`;detail.textContent=`正在准备角色与场景 ${done} / ${total}`;slow();},
   ready(){ready=true;clearTimeout(bootTimer);clearTimeout(slowTimer);panel.hidden=true;document.querySelector('#intro').setAttribute('aria-busy','false');},
   error(){failed=true;clearTimeout(slowTimer);title.textContent='部分素材未能加载';detail.textContent='检查网络后点击重试，已下载的素材会保留。';retry.hidden=false;},
   retry(){failed=false;retry.hidden=true;title.textContent='正在重新连接…';detail.textContent='正在继续准备游戏';slow();}
@@ -65,7 +65,7 @@
  if('serviceWorker' in navigator&&!new URLSearchParams(location.search).has('nosw'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 })();
 </script>
- <script type="module" src="game/app-6NYLSGI4.mjs" onerror="window.naiwaLoader.error()"></script>
+ <script type="module" src="game/app-6Q4LEWI7.mjs" onerror="window.naiwaLoader.error()"></script>
 <dialog id="productsDialog"><button id="closeProducts">关闭</button><h2>黄桃工坊 · 五款招牌</h2><p>每种角色对应一种产品。选择设备配方后装料生产。</p><div id="productList"></div><small>旧版未分类库存按普通型保留；今后按实际回收种类入库。</small></dialog>
 <dialog id="historyDialog"><button class="close" data-close aria-label="关闭捕猎记录">×</button><h2>我的捕猎记录</h2><div id="historyList"></div><p>记录和进度保存在当前浏览器，最多保留最近 100 局；换设备或清除网站数据后无法恢复。</p></dialog>
 </body></html>

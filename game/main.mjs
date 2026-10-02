@@ -16,8 +16,8 @@ import {AudioEngine} from './audio.mjs?v=hit-voices-8';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#game'),c=canvas.getContext('2d'),preview=$('#preview'),pc=preview.getContext('2d');
 window.naiwaLoader?.moduleReady();
-const images={};let assetsLoaded=false;
-function load(){return loadHunt(images,(done,total)=>{window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
+const images={};let assetsLoaded=false,loadGeneration=0;
+function load(){const generation=++loadGeneration;return loadHunt(images,(done,total)=>{if(generation!==loadGeneration)return;window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
 // Start art downloads while the cloud save is being read, rather than afterwards.
 let huntLoad=load();huntLoad.catch(()=>{});
 const playerStore=new PlayerStore();

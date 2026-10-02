@@ -1,10 +1,11 @@
+import {BackgroundMusic} from './background-music.mjs';
 import {embeddedAudio,audioMirrors} from './audio-files.mjs';
 import {downloadAudio} from './audio-download.mjs';
 import {TAUNT_DURATION,TAUNT_AUDIO_OFFSET} from './taunt.mjs?v=hunt-fixes-7';
 // User-approved original clips; numbers refer to the audition order.
 export const HIT_VOICE_FILES=Object.freeze({basic:'05-andi.wav',bird:'04-oula.wav',hopper:'02-gajiaosai.wav',shell:'03-gangbadi.wav',longbody:'01-gagadilaxi.wav'});
 export class AudioEngine {
- constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.musicBuffer=null;this.musicSource=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();}
+ constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();}
  loadBuffer(url){
   if(this.pending.has(url))return this.pending.get(url);
   const task=(async()=>{
@@ -41,18 +42,18 @@ export class AudioEngine {
    const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return Promise.resolve();
    this.ctx=new Context();this.effects=this.ctx.createGain();this.effects.connect(this.ctx.destination);
    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=0;this.musicGain.connect(this.ctx.destination);this.duckUntil=0;
+   this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:'assets/audio/naiwaxxl-bgm-original.mp3',mirrors:audioMirrors,onStatus:status=>this.onMusicStatus?.(status)});
    this.ctx.onstatechange=()=>{if(this.ctx.state==='running'){this.effectsTarget=undefined;this.musicTarget=undefined;}};
   }
-  this.resume();
+  this.resume();this.music?.play({retry:true});
   if(!this.laughReady&&!this.laugh)this.laughReady=this.loadBuffer('assets/characters/basic/taunt/reference/laugh-original.wav').then(b=>{this.laugh=b;}).catch(()=>{}).finally(()=>{this.laughReady=null;});
-  if(!this.musicReady&&!this.musicBuffer)this.musicReady=this.loadBuffer('assets/audio/naiwaxxl-bgm-original.mp3').then(b=>{this.musicBuffer=b;}).catch(()=>{}).finally(()=>{this.musicReady=null;});
   return Promise.all([this.laughReady,this.loadHitVoices()]);
  }
  musicTick(active){
-  if(!this.ctx)return;const c=this.ctx,t=c.currentTime,on=this.enabled&&active&&c.state==='running';
-  const effectsTarget=this.enabled?1:0,musicTarget=on?(t<this.duckUntil?.025:.14):0;
+  if(!this.ctx)return;const c=this.ctx,t=c.currentTime,shouldPlay=this.enabled&&active,on=shouldPlay&&c.state==='running';
+  const effectsTarget=this.enabled?1:0,musicTarget=on?(t<this.duckUntil?.07:.18):0;
   if(this.effectsTarget!==effectsTarget){this.effects.gain.setTargetAtTime(effectsTarget,t,.03);this.effectsTarget=effectsTarget;}
-  if(on&&this.musicBuffer&&!this.musicSource){const source=c.createBufferSource();source.buffer=this.musicBuffer;source.loop=true;source.connect(this.musicGain);source.start();this.musicSource=source;}
+  this.music?.setActive(shouldPlay);
   // Change gains only when state changes, rather than enqueueing automation every frame.
   if(this.musicTarget!==musicTarget){this.musicGain.gain.setTargetAtTime(musicTarget,t,.09);this.musicTarget=musicTarget;}
  }
@@ -74,7 +75,7 @@ export class AudioEngine {
   if(!this.enabled||!this.ctx)return;const t=this.ctx.currentTime;
   // Each accepted hit already has a species. Do not globally throttle different targets.
   if(type==='preyHit'){this.playHitVoice(options.species);return;}
-  if(t-(this.last[type]??-10)<(type==='step'?.24:type==='jet'?.13:type==='shipEngine'?.5:.07))return;this.last[type]=t;if(['shoot','reel','pickup','taunt','shipEngine'].includes(type))this.duckUntil=Math.max(this.duckUntil||0,t+(type==='taunt'?(options.duration??TAUNT_DURATION):.65));
+  if(t-(this.last[type]??-10)<(type==='step'?.24:type==='jet'?.13:type==='shipEngine'?.5:.07))return;this.last[type]=t;if(['shoot','reel','pickup','taunt'].includes(type))this.duckUntil=Math.max(this.duckUntil||0,t+(type==='taunt'?(options.duration??TAUNT_DURATION):.65));
   switch(type){
    case 'shipEngine':this.noise(.55,.055,620);this.tone(65,85,.5,.028,'triangle');break;
    case 'taunt':if(this.laugh){const s=this.ctx.createBufferSource(),g=this.ctx.createGain();s.buffer=this.laugh;g.gain.value=.36;s.connect(g);g.connect(this.effects);s.onended=()=>{s.disconnect();g.disconnect();};s.start(0,Math.min(TAUNT_AUDIO_OFFSET,Math.max(0,this.laugh.duration-TAUNT_DURATION)),Math.min(options.duration??TAUNT_DURATION,this.laugh.duration*.8));}break;

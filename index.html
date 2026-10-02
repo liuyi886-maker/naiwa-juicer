@@ -20,7 +20,7 @@
     <button id="startBtn" class="home-hit home-hunt" disabled aria-label="开始捕猎"><span class="visually-hidden">开始捕猎</span></button>
     <button id="openLabIntro" class="home-hit home-shop" disabled aria-label="经营工坊"><span class="visually-hidden">经营工坊</span></button>
     <span id="continueHint" class="continue-hint hidden">接着上次进度玩</span>
-    <div class="home-footer"><button id="demoBtn" disabled>操作演示</button><button id="historyBtn">捕猎记录</button><button id="retryAssets" hidden>重试加载</button><span id="saveStatus" role="status">正在准备装备…</span></div>
+    <div class="home-footer"><button id="demoBtn" disabled>操作演示</button><button id="homeSoundBtn" aria-label="开启声音">点按开启声音</button><button id="historyBtn">捕猎记录</button><button id="retryAssets" hidden>重试加载</button><span id="saveStatus" role="status">正在准备装备…</span></div>
    </div></div>
    <div class="overlay hidden" id="pauseOverlay"><section class="pause-art-panel" role="dialog" aria-labelledby="pauseTitle"><h2 id="pauseTitle">捕猎已暂停</h2><p class="pause-subtitle">歇一会儿，冒险马上继续</p><nav class="pause-art-tools" aria-label="暂停菜单"><button id="openLabPause" class="pause-tile tile-lab"><span>加工与店铺</span></button><button id="albumBtn" class="pause-tile tile-album"><span>动作图鉴</span></button><button id="weaponBtn" class="pause-tile tile-weapon"><span>捕猎装备</span></button></nav><button id="resumeBtn" class="pause-resume">继续捕猎</button><button id="restartBtn" class="pause-restart">重新开始本关</button></section></div>
    <div class="overlay hidden" id="resultOverlay"><div class="dialog result"><span class="eyebrow">任务完成</span><h2 id="resultTitle">满载而归！</h2><p id="resultSummary">8 只小家伙已回收，带回加工站。</p><div class="result-count"><span id="resultNumber">8</span> <small>只</small></div><button id="processBtn" class="primary">回到加工站 →</button></div></div>
@@ -65,7 +65,7 @@
  if('serviceWorker' in navigator&&!new URLSearchParams(location.search).has('nosw'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
 })();
 </script>
- <script type="module" src="game/app-PMDIV26D.mjs" onerror="window.naiwaLoader.error()"></script>
+ <script type="module" src="game/app-3TVICDH2.mjs" onerror="window.naiwaLoader.error()"></script>
 <dialog id="productsDialog"><button id="closeProducts">关闭</button><h2>黄桃工坊 · 五款招牌</h2><p>每种角色对应一种产品。选择设备配方后装料生产。</p><div id="productList"></div><small>旧版未分类库存按普通型保留；今后按实际回收种类入库。</small></dialog>
 <dialog id="historyDialog"><button class="close" data-close aria-label="关闭捕猎记录">×</button><h2>我的捕猎记录</h2><div id="historyList"></div><p>记录和进度保存在当前浏览器，最多保留最近 100 局；换设备或清除网站数据后无法恢复。</p></dialog>
 </body></html>

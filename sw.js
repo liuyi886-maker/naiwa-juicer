@@ -1,8 +1,8 @@
-const CACHE='naiwa-static-be4759d5edc1';
+const CACHE='naiwa-static-8e43bac1758f';
 const PREFIX='naiwa-static-';
 const scope=new URL(self.registration.scope);
 self.addEventListener('install',event=>{
- event.waitUntil(caches.open(CACHE).then(cache=>cache.add(new Request(scope.href,{cache:'reload'}))).catch(()=>{}));
+ event.waitUntil(caches.open(CACHE).then(cache=>cache.add(new Request(scope.href,{cache:'reload'}))).catch(()=>{}).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',event=>{
  event.waitUntil((async()=>{const keys=(await caches.keys()).filter(k=>k.startsWith(PREFIX));for(const key of keys.slice(0,-2))if(key!==CACHE)await caches.delete(key);await self.clients.claim();})());
@@ -17,7 +17,8 @@ self.addEventListener('fetch',event=>{
   const cache=await caches.open(CACHE);
   const key=request.mode==='navigate'?scope.href:request;
   const cached=await cache.match(key);
-  const download=async()=>{const response=await fetch(request);if(response.ok&&response.status===200){try{await cache.put(key,response.clone());}catch{}}return response;};
+  // Deliver headers/body immediately; storing a clone may wait for the entire media stream.
+  const download=async()=>{const response=await fetch(request);if(response.ok&&response.status===200){try{event.waitUntil(cache.put(key,response.clone()).catch(()=>{}));}catch{}}return response;};
   if(request.mode!=='navigate'&&cached)return cached;
   if(request.mode==='navigate'&&cached){
    const network=download();event.waitUntil(network.catch(()=>{}));

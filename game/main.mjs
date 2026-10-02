@@ -185,7 +185,16 @@ function start(resume=false,demo=false){
 $('#demoBtn').onclick=()=>{start(false,true);toast('操作演示中 · 按方向键即可接管');};
 $('#startBtn').onclick=()=>start(true);$('#restartBtn').onclick=()=>start(false);$('#resumeBtn').onclick=()=>togglePause(false);$('#pauseBtn').onclick=()=>togglePause();
 $('#historyBtn').onclick=()=>{const list=$('#historyList');list.replaceChildren();if(!roundHistory.length){const p=document.createElement('p');p.textContent='还没有完成的捕猎记录。';list.append(p);}for(const r of roundHistory){const p=document.createElement('p');p.textContent=`${new Date(r.endedAt).toLocaleString('zh-CN')} · ${r.status==='completed'?'完成':'重新开局'} · 回收 ${r.delivered}/${r.total} · 逃走 ${r.escaped}${r.demo?' · 演示':''}`;list.append(p);}modal($('#historyDialog'));};
-function toggleSound(){audio.enabled=!audio.enabled;if(audio.enabled)audio.unlock();$('#soundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#soundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');$('#labSoundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#labSoundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');audio.play('click');};$('#soundBtn').onclick=$('#labSoundBtn').onclick=toggleSound;
+function syncSoundButtons(){
+ const status=audio.music?.status,needsTap=!audio.ctx||status==='blocked'||status==='error';
+ for(const id of ['soundBtn','labSoundBtn','homeSoundBtn']){const button=$('#'+id);if(!button)continue;button.textContent=!audio.enabled?'声音 · 关':needsTap?'点按开启声音':'声音 · 开';button.setAttribute('aria-label',audio.enabled&&!needsTap?'关闭声音':'开启声音');}
+}
+function toggleSound(){
+ const recover=audio.enabled&&(!audio.ctx||['blocked','error'].includes(audio.music?.status));
+ if(!recover)audio.enabled=!audio.enabled;if(audio.enabled)audio.unlock();audio.musicTick(!document.hidden);syncSoundButtons();audio.play('click');save();
+}
+audio.onMusicStatus=syncSoundButtons;
+$('#soundBtn').onclick=$('#labSoundBtn').onclick=$('#homeSoundBtn').onclick=toggleSound;
 function modal(el){clearInput();if(running)paused=true;el.showModal();audio.unlock();audio.play('click');}
 $('#weaponBtn').onclick=()=>modal($('#weaponDialog'));$('#albumBtn').onclick=()=>modal($('#albumDialog'));
 for(const b of $$('[data-close]'))b.onclick=()=>b.closest('dialog').close();
@@ -286,7 +295,7 @@ for(const b of $$('[data-action]')){
 let hudTick=0,labTick=0;
 function frame(ms){
  if(document.hidden){last=ms;audio.musicTick(false);requestAnimationFrame(frame);return;}
- audio.musicTick(!document.hidden&&(scene!=='hunt'||(running&&!paused)));
+ audio.musicTick(!document.hidden);
  const dt=Math.min(.12,(ms-last)/1000||0);last=ms;renderDt=dt;
  if(running&&!paused&&scene==='hunt'){
   simulation.advance(dt,step=>{
@@ -328,8 +337,10 @@ if(initialSave?.sound===false){audio.enabled=false;$('#soundBtn').textContent=$(
 if(!assetsLoaded)$('#saveStatus').textContent='正在准备捕猎素材…';
 
 // iOS permits playback at the end of a touch; pointerdown alone is not sufficient on every device.
-const restoreAudio=()=>{if(audio.ctx&&audio.enabled)audio.unlock();};
+const restoreAudio=event=>{if(event?.target?.closest?.('#soundBtn,#labSoundBtn,#homeSoundBtn'))return;if(audio.enabled)audio.unlock();};
 document.addEventListener('pointerup',restoreAudio,{passive:true});
 document.addEventListener('touchend',restoreAudio,{passive:true});
 document.addEventListener('keydown',restoreAudio,{passive:true});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)audio.resume();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)audio.resume();audio.musicTick(!document.hidden);});
+
+syncSoundButtons();

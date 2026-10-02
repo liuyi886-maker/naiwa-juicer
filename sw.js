@@ -1,4 +1,4 @@
-const CACHE='naiwa-static-747f09232ea8';
+const CACHE='naiwa-static-a5d6a99d60d2';
 const PREFIX='naiwa-static-';
 const scope=new URL(self.registration.scope);
 self.addEventListener('install',event=>{
@@ -9,7 +9,9 @@ self.addEventListener('activate',event=>{
 });
 self.addEventListener('fetch',event=>{
  const request=event.request,url=new URL(request.url);
- if(request.method!=='GET'||url.origin!==scope.origin||!url.pathname.startsWith(scope.pathname)||url.pathname.endsWith('/sw.js'))return;
+ const own=url.origin===scope.origin&&url.pathname.startsWith(scope.pathname);
+ const mirror=(url.hostname==='raw.githubusercontent.com'&&url.pathname.startsWith('/liuyi886-maker/naiwa-juicer/'))||(url.hostname==='cdn.jsdelivr.net'&&url.pathname.startsWith('/gh/liuyi886-maker/naiwa-juicer@'));
+ if(request.method!=='GET'||(!own&&!mirror)||url.pathname.endsWith('/sw.js'))return;
  if(request.mode!=='navigate'&&!/\.(?:webp|mjs|js|css|json|mp3|wav)$/.test(url.pathname))return;
  event.respondWith((async()=>{
   const cache=await caches.open(CACHE);

@@ -8,7 +8,7 @@
  window.naiwaLoader={
   moduleReady(){moduleLoaded=true;clearTimeout(bootTimer);},
   progress(done,total){if(ready||failed)return;retry.hidden=true;bar.max=total;bar.value=done;title.textContent=`游戏加载中 · ${Math.min(100,Math.round(done/total*100))}%`;detail.textContent=`正在准备角色与场景 ${done} / ${total}`;slow();},
-  ready(){ready=true;clearTimeout(bootTimer);clearTimeout(slowTimer);panel.hidden=true;document.querySelector('#intro').setAttribute('aria-busy','false');},
+  ready(){const art=document.querySelector('.home-art');const source=art?.parentElement?.querySelector('source[data-srcset]');if(source)source.srcset=source.dataset.srcset;if(art?.dataset?.src)art.src=art.dataset.src;ready=true;clearTimeout(bootTimer);clearTimeout(slowTimer);panel.hidden=true;document.querySelector('#intro').setAttribute('aria-busy','false');},
   error(){failed=true;clearTimeout(slowTimer);title.textContent='部分素材未能加载';detail.textContent='检查网络后点击重试，已下载的素材会保留。';retry.hidden=false;},
   retry(){failed=false;retry.hidden=true;title.textContent='正在重新连接…';detail.textContent='正在继续准备游戏';slow();}
  };

@@ -15,8 +15,9 @@
     {
       "binding": "DB",
       "database_name": "naiwa-juicer-db",
-      "database_id": "00000000-0000-4000-8000-000000000000",
+      "database_id": "d760c3fe-e7e9-4e5f-806b-494f506e71bc",
       "migrations_dir": "drizzle"
     }
-  ]
+  ],
+  "account_id": "a8695b421a228d25aaf753cffe4f11a8"
 }

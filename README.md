@@ -1,5 +1,9 @@
 # 奶娃榨汁机
 
+游戏：https://naiwa-juicer.1074650058.workers.dev/
+
+运营后台：https://naiwa-juicer.1074650058.workers.dev/admin/（需要管理员密码）
+
 原创角色捕猎与工坊经营网页游戏。横竖屏首页、横屏游戏、五种角色、原声受击音效、生产和售卖、云端存档与独立运营后台。
 
 本工程可独立部署到 Cloudflare Workers + D1，不依赖 ChatGPT Sites。

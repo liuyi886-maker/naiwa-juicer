@@ -1,46 +1,74 @@
+import {embeddedAudio,audioMirrors} from './audio-files.mjs';
+import {downloadAudio} from './audio-download.mjs';
 import {TAUNT_DURATION,TAUNT_AUDIO_OFFSET} from './taunt.mjs?v=hunt-fixes-7';
 // User-approved original clips; numbers refer to the audition order.
 export const HIT_VOICE_FILES=Object.freeze({basic:'05-andi.wav',bird:'04-oula.wav',hopper:'02-gajiaosai.wav',shell:'03-gangbadi.wav',longbody:'01-gagadilaxi.wav'});
 export class AudioEngine {
- constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.loadingLaugh=false;this.musicBuffer=null;this.musicSource=null;this.musicReady=null;this.hitBuffers={};this.hitReady=null;}
+ constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.musicBuffer=null;this.musicSource=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();}
+ loadBuffer(url){
+  if(this.pending.has(url))return this.pending.get(url);
+  const task=(async()=>{
+   const data=embeddedAudio[url];
+   const bytes=data?Uint8Array.from(atob(data),c=>c.charCodeAt(0)).buffer:await downloadAudio(url,{mirrors:audioMirrors});
+   return this.ctx.decodeAudioData(bytes);
+  })();
+  this.pending.set(url,task);task.finally(()=>this.pending.delete(url)).catch(()=>{});return task;
+ }
  loadHitVoices(){
   if(!this.ctx)return Promise.resolve();
-  if(!this.hitReady)this.hitReady=Promise.all(Object.entries(HIT_VOICE_FILES).map(async([species,file])=>{
-   try{const response=await fetch(`assets/audio/hit-voices-v3/${file}`);if(!response.ok)throw new Error(`Hit voice unavailable: ${file}`);this.hitBuffers[species]=await this.ctx.decodeAudioData(await response.arrayBuffer());}
-   catch(error){console.warn(error);}
+  return Promise.all(Object.entries(HIT_VOICE_FILES).map(async([species,file])=>{
+   if(this.hitBuffers[species])return;
+   try{this.hitBuffers[species]=await this.loadBuffer(`assets/audio/hit-voices-v3/${file}`);}catch{}
   }));
-  return this.hitReady;
  }
  playHitVoice(species){
   if(!this.enabled||!this.ctx)return;
-  const buffer=this.hitBuffers[species];if(!buffer)return;
+  const buffer=this.hitBuffers[species];if(!buffer){this.loadHitVoices();return;}
   const c=this.ctx,t=c.currentTime,source=c.createBufferSource(),gain=c.createGain();
   source.buffer=buffer;gain.gain.value=.65;source.connect(gain);gain.connect(this.effects);
   source.onended=()=>{source.disconnect();gain.disconnect();};
-  this.duckUntil=Math.max(this.duckUntil||0,t+buffer.duration+.12);
-  source.start();
+  this.duckUntil=Math.max(this.duckUntil||0,t+buffer.duration+.12);source.start();
  }
- unlock(){if(!this.ctx){this.ctx=new (window.AudioContext||window.webkitAudioContext)();this.effects=this.ctx.createGain();this.effects.connect(this.ctx.destination);this.musicGain=this.ctx.createGain();this.musicGain.gain.value=0;this.musicGain.connect(this.ctx.destination);this.musicStep=0;this.nextNote=0;this.duckUntil=0;}if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{});if(!this.loadingLaugh){this.loadingLaugh=true;this.laughReady=fetch('assets/characters/basic/taunt/reference/laugh-original.wav').then(r=>r.arrayBuffer()).then(b=>this.ctx.decodeAudioData(b)).then(b=>this.laugh=b).catch(()=>{});}if(!this.musicReady){this.musicReady=fetch('assets/audio/naiwaxxl-bgm-original.mp3').then(r=>{if(!r.ok)throw new Error('BGM unavailable');return r.arrayBuffer();}).then(b=>this.ctx.decodeAudioData(b)).then(b=>this.musicBuffer=b).catch(e=>console.warn(e));}return Promise.all([this.laughReady,this.loadHitVoices()]);}
+ resume(){
+  if(!this.enabled||!this.ctx)return;
+  // Safari can enter interrupted after a call, screen lock, or switching applications.
+  if(this.ctx.state==='suspended'||this.ctx.state==='interrupted')this.ctx.resume().catch(()=>{});
+ }
+ unlock(){
+  if(!this.enabled)return Promise.resolve();
+  try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch{}
+  if(!this.ctx){
+   const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return Promise.resolve();
+   this.ctx=new Context();this.effects=this.ctx.createGain();this.effects.connect(this.ctx.destination);
+   this.musicGain=this.ctx.createGain();this.musicGain.gain.value=0;this.musicGain.connect(this.ctx.destination);this.duckUntil=0;
+   this.ctx.onstatechange=()=>{if(this.ctx.state==='running'){this.effectsTarget=undefined;this.musicTarget=undefined;}};
+  }
+  this.resume();
+  if(!this.laughReady&&!this.laugh)this.laughReady=this.loadBuffer('assets/characters/basic/taunt/reference/laugh-original.wav').then(b=>{this.laugh=b;}).catch(()=>{}).finally(()=>{this.laughReady=null;});
+  if(!this.musicReady&&!this.musicBuffer)this.musicReady=this.loadBuffer('assets/audio/naiwaxxl-bgm-original.mp3').then(b=>{this.musicBuffer=b;}).catch(()=>{}).finally(()=>{this.musicReady=null;});
+  return Promise.all([this.laughReady,this.loadHitVoices()]);
+ }
  musicTick(active){
   if(!this.ctx)return;const c=this.ctx,t=c.currentTime,on=this.enabled&&active&&c.state==='running';
-  this.effects.gain.setTargetAtTime(this.enabled?1:0,t,.03);
+  const effectsTarget=this.enabled?1:0,musicTarget=on?(t<this.duckUntil?.025:.14):0;
+  if(this.effectsTarget!==effectsTarget){this.effects.gain.setTargetAtTime(effectsTarget,t,.03);this.effectsTarget=effectsTarget;}
   if(on&&this.musicBuffer&&!this.musicSource){const source=c.createBufferSource();source.buffer=this.musicBuffer;source.loop=true;source.connect(this.musicGain);source.start();this.musicSource=source;}
-  // Play the reference MP3 unchanged. Only playback gain yields to important game sounds.
-  this.musicGain.gain.setTargetAtTime(on?(t<this.duckUntil?.025:.14):0,t,.09);
+  // Change gains only when state changes, rather than enqueueing automation every frame.
+  if(this.musicTarget!==musicTarget){this.musicGain.gain.setTargetAtTime(musicTarget,t,.09);this.musicTarget=musicTarget;}
  }
 
  voice(kind='curious',volume=1){
   if(!this.enabled||!this.ctx)return;const c=this.ctx,t=c.currentTime,key=kind==='ouch'?'hitVoice':'voice';if(t-(this.last[key]??-10)<(kind==='ouch'?.07:.65))return;this.last[key]=t;this.duckUntil=Math.max(this.duckUntil||0,t+.8);
   const pattern={alert:[[330,650,.18],[520,390,.16]],ouch:[[280,135,.25]],caught:[[510,240,.34]],eat:[[175,220,.12],[180,160,.16]],curious:[[215,330,.18],[310,220,.17]],laugh:[[250,410,.1],[260,430,.12],[250,320,.18]]}[kind]||[[250,180,.2]];
   let delay=0;for(const [from,to,duration] of pattern){const start=t+delay,o=c.createOscillator(),gain=c.createGain();o.type='sawtooth';o.frequency.setValueAtTime(from,start);o.frequency.exponentialRampToValueAtTime(to,start+duration);gain.gain.setValueAtTime(.001,start);gain.gain.exponentialRampToValueAtTime(.035*volume,start+.025);gain.gain.exponentialRampToValueAtTime(.001,start+duration);
-   for(const [frequency,q,weight] of [[650,4,1],[1250,5,.55],[2500,8,.2]]){const f=c.createBiquadFilter(),g=c.createGain();f.type='bandpass';f.frequency.value=frequency;f.Q.value=q;g.gain.value=weight;o.connect(f);f.connect(g);g.connect(gain);}gain.connect(this.effects);o.start(start);o.stop(start+duration+.01);delay+=duration+.055;
+   const nodes=[];for(const [frequency,q,weight] of [[650,4,1],[1250,5,.55],[2500,8,.2]]){const f=c.createBiquadFilter(),g=c.createGain();f.type='bandpass';f.frequency.value=frequency;f.Q.value=q;g.gain.value=weight;o.connect(f);f.connect(g);g.connect(gain);nodes.push(f,g);}o.onended=()=>{o.disconnect();gain.disconnect();nodes.forEach(n=>n.disconnect());};gain.connect(this.effects);o.start(start);o.stop(start+duration+.01);delay+=duration+.055;
   }
  }
  tone(freq,end,duration,vol=.12,type='sine',delay=0){
-  if(!this.enabled||!this.ctx)return;const c=this.ctx,t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+duration);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(vol,t+.009);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.effects);o.start(t);o.stop(t+duration+.02);
+  if(!this.enabled||!this.ctx)return;const c=this.ctx,t=c.currentTime+delay,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+duration);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(vol,t+.009);g.gain.exponentialRampToValueAtTime(.001,t+duration);o.connect(g);g.connect(this.effects);o.onended=()=>{o.disconnect();g.disconnect();};o.start(t);o.stop(t+duration+.02);
  }
  noise(duration,vol,frequency){
-  if(!this.enabled||!this.ctx)return;const c=this.ctx,n=Math.ceil(c.sampleRate*duration),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=b;f.type='lowpass';f.frequency.value=frequency;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(this.effects);s.start();
+  if(!this.enabled||!this.ctx)return;const c=this.ctx,n=Math.ceil(c.sampleRate*duration);let b=this.noiseBuffers.get(n);if(!b){b=c.createBuffer(1,n,c.sampleRate);const d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);this.noiseBuffers.set(n,b);}const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=b;f.type='lowpass';f.frequency.value=frequency;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(this.effects);s.onended=()=>{s.disconnect();f.disconnect();g.disconnect();};s.start();
  }
  play(type,options={}){
   if(!this.enabled||!this.ctx)return;const t=this.ctx.currentTime;
@@ -49,7 +77,7 @@ export class AudioEngine {
   if(t-(this.last[type]??-10)<(type==='step'?.24:type==='jet'?.13:type==='shipEngine'?.5:.07))return;this.last[type]=t;if(['shoot','reel','pickup','taunt','shipEngine'].includes(type))this.duckUntil=Math.max(this.duckUntil||0,t+(type==='taunt'?(options.duration??TAUNT_DURATION):.65));
   switch(type){
    case 'shipEngine':this.noise(.55,.055,620);this.tone(65,85,.5,.028,'triangle');break;
-   case 'taunt':if(this.laugh){const s=this.ctx.createBufferSource(),g=this.ctx.createGain();s.buffer=this.laugh;g.gain.value=.36;s.connect(g);g.connect(this.effects);s.start(0,Math.min(TAUNT_AUDIO_OFFSET,Math.max(0,this.laugh.duration-TAUNT_DURATION)),Math.min(options.duration??TAUNT_DURATION,this.laugh.duration*.8));}break;
+   case 'taunt':if(this.laugh){const s=this.ctx.createBufferSource(),g=this.ctx.createGain();s.buffer=this.laugh;g.gain.value=.36;s.connect(g);g.connect(this.effects);s.onended=()=>{s.disconnect();g.disconnect();};s.start(0,Math.min(TAUNT_AUDIO_OFFSET,Math.max(0,this.laugh.duration-TAUNT_DURATION)),Math.min(options.duration??TAUNT_DURATION,this.laugh.duration*.8));}break;
    case 'loadMachine':this.noise(.16,.06,650);this.tone(160,75,.18,.04,'triangle');break;
    case 'pressDown':this.tone(105,65,.7,.025,'sawtooth');this.noise(.32,.035,550);break;
    case 'squeeze':this.tone(190,75,.3,.035,'triangle');this.tone(350,190,.18,.025,'sine',.12);this.noise(.18,.035,900);break;

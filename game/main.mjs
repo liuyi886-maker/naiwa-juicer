@@ -70,7 +70,9 @@ function sprite(ctx,name,frame,x,y,height,dir=1){
  const dw=height*sw/sh;ctx.save();ctx.translate(x,y);ctx.scale(dir*(name==='hunter'||name==='hunterRun'||name==='preyRun'?1:-1),1);
  ctx.drawImage(im,sx,sy,sw,sh,-dw*(name.startsWith('hunter')?.38:.5),-height,dw,height);ctx.restore();
 }
+function inView(x,pad=180){return x+pad>=cam&&x-pad<=cam+1280;}
 function ground(x,y,w,depth=720){
+ if(x+w<cam-40||x>cam+1320)return;
  c.fillStyle='#111216';c.fillRect(x,y,w,depth);c.fillStyle='#21453f';c.beginPath();c.moveTo(x,y-9);
  for(let i=0;i<=w;i+=18)c.lineTo(x+i,y-7+Math.sin(i*.11)*2);
  c.lineTo(x+w,y+9);for(let i=w;i>=0;i-=18)c.lineTo(x+i,y+10+Math.sin(i*.2)*6);c.closePath();c.fill();
@@ -79,6 +81,7 @@ function ground(x,y,w,depth=720){
 }
 // Plants use world coordinates, so they stay planted as the camera follows the hunter.
 function grass(x,y,size=1,seed=0,front=false){
+ if(!inView(x,140))return;
  c.save();c.translate(x,y-6);c.scale(size,size);
  const sway=Math.sin(game.time*1.4+seed)*2;
  // Broad, overlapping swamp leaves, with a darker body and olive growing tips.
@@ -93,6 +96,7 @@ function grass(x,y,size=1,seed=0,front=false){
  c.restore();
 }
 function boundaryShrub(x,y,flip=1){
+ if(!inView(x,140))return;
  c.save();c.translate(x,y);c.scale(flip,1);
  line(c,0,-8,-12,-139,'#3b5140',7);line(c,-10,-75,29,-126,'#3b5140',5);
  const clusters=[[-25,-130,31,28],[16,-155,34,30],[34,-109,29,32],[-18,-72,40,29],[25,-39,36,26]];
@@ -104,6 +108,7 @@ function boundaryShrub(x,y,flip=1){
  c.restore();grass(x,y,1.25,7,true);
 }
 function stump(x,y){
+ if(!inView(x,60))return;
  c.fillStyle='#3f5650';c.beginPath();c.moveTo(x-34,y);c.lineTo(x-27,y-55);c.lineTo(x-15,y-62);c.lineTo(x+29,y-57);c.lineTo(x+24,y-16);c.lineTo(x+39,y);c.closePath();c.fill();
  ellipse(c,x,y-58,28,7,'#637267');ellipse(c,x,y-58,20,4,'#3b5048');line(c,x-9,y-46,x-15,y-5,'#263e37',3);line(c,x+15,y-40,x+13,y-14,'#2b4139',3);
  c.fillStyle='#3f704b';c.beginPath();c.moveTo(x-29,y-60);c.bezierCurveTo(x-5,y-68,x+20,y-66,x+30,y-57);c.lineTo(x+28,y-48);c.lineTo(x+10,y-50);c.lineTo(x+9,y-36);c.lineTo(x+3,y-39);c.lineTo(x+2,y-53);c.lineTo(x-30,y-51);c.closePath();c.fill();
@@ -115,7 +120,7 @@ function render(t){
  c.drawImage(images.bg,-cam*.08,-58,1280+(WORLD.width-1280)*.08,810);
  c.save();c.translate(-cam+(Math.random()-.5)*shake,(Math.random()-.5)*shake*.3);
  // A separate collision surface lets the hunter really fall and jet across gaps.
- for(let i=0;i<LAND.length-1;i++){const a=LAND[i],b=LAND[i+1];const g=c.createLinearGradient(0,450,0,720);g.addColorStop(0,'#20202d');g.addColorStop(1,'#11111c');c.fillStyle=g;c.fillRect(a.end,450,b.x-a.end,270);ellipse(c,(a.end+b.x)/2,483,(b.x-a.end)/2,13,'#222333');line(c,a.end+10,487,b.x-10,487,'#343342',3);}
+ for(let i=0;i<LAND.length-1;i++){const a=LAND[i],b=LAND[i+1];if(b.x<cam||a.end>cam+1280)continue;const g=c.createLinearGradient(0,450,0,720);g.addColorStop(0,'#20202d');g.addColorStop(1,'#11111c');c.fillStyle=g;c.fillRect(a.end,450,b.x-a.end,270);ellipse(c,(a.end+b.x)/2,483,(b.x-a.end)/2,13,'#222333');line(c,a.end+10,487,b.x-10,487,'#343342',3);}
  for(const land of LAND)ground(land.x,land.y,land.end-land.x);
  for(const s of PLATFORMS){ground(s.x,s.y,s.w,720);}
  for(const [i,land] of LAND.entries()){
@@ -124,10 +129,10 @@ function render(t){
   for(const x of [land.x+300,land.end-275])stump(x,land.y);
  }
  for(const platform of PLATFORMS){grass(platform.x+26,platform.y,.45,3);grass(platform.x+platform.w-22,platform.y,.5,9);}
- for(const z of game.prey)drawBurrow(c,z,groundAt(z.home),t);
- for(const b of game.baits)can(b.x,b.y);
+ for(const z of game.prey)if(inView(z.home))drawBurrow(c,z,groundAt(z.home),t);
+ for(const b of game.baits)if(inView(b.x))can(b.x,b.y);
  for(const z of game.prey){
-  if(['hidden','escaped','delivered'].includes(z.state))continue;
+  if(!inView(z.x,250)||['hidden','escaped','delivered'].includes(z.state))continue;
   let sheet='walk',f=0,y=z.y,h=116;
   if(z.state==='run'){sheet=images.preyRun?'preyRun':'run';f=Math.floor(z.stride/22)%(sheet==='preyRun'?6:8);y+=Math.sin(z.stride/22*Math.PI/3)*2;}
   if(z.state==='walk')f=Math.floor(z.stride/13)%8;
@@ -146,7 +151,7 @@ function render(t){
   drawCaptureResistance(c,z);
   if(z.state==='startle'){c.font='900 40px Impact,system-ui';c.textAlign='center';c.lineWidth=5;c.strokeStyle='#332819';c.strokeText('!',z.x,z.y-h-8);c.fillStyle='#ff6425';c.fillText('!',z.x,z.y-h-8);}
  }
- for(const d of game.dogs)if(d.state!=='cleared'){ellipse(c,d.x,d.y,29,5,'#10252a66');drawDog(c,images.dogRig,d,t);}
+ for(const d of game.dogs)if(d.state!=='cleared'&&inView(d.x)){ellipse(c,d.x,d.y,29,5,'#10252a66');drawDog(c,images.dogRig,d,t);}
  drawRecoveryCraft(c,game.ship,t,(x,y)=>{const z=game.prey[game.ship.target];if(!z)return;
   const cargoY=game.ship.load?y:z.y-game.ship.y,height=game.ship.load?72:116*(1-Math.min(1,z.timer/.85)*.4);
   if(game.ship.load||z.state==='boarding'){if(z.species==='basic')sprite(c,'startle',6,x,cargoY,height,z.dir);else{const scale=height/Math.max(118,speciesFor(z).height);c.save();c.translate(x,cargoY);c.scale(scale,scale);drawPrey(c,images.preyRig,{...z,x:0,y:0},t);c.restore();}}
@@ -180,13 +185,14 @@ function start(resume=false,demo=false){
 $('#demoBtn').onclick=()=>{start(false,true);toast('操作演示中 · 按方向键即可接管');};
 $('#startBtn').onclick=()=>start(true);$('#restartBtn').onclick=()=>start(false);$('#resumeBtn').onclick=()=>togglePause(false);$('#pauseBtn').onclick=()=>togglePause();
 $('#historyBtn').onclick=()=>{const list=$('#historyList');list.replaceChildren();if(!roundHistory.length){const p=document.createElement('p');p.textContent='还没有完成的捕猎记录。';list.append(p);}for(const r of roundHistory){const p=document.createElement('p');p.textContent=`${new Date(r.endedAt).toLocaleString('zh-CN')} · ${r.status==='completed'?'完成':'重新开局'} · 回收 ${r.delivered}/${r.total} · 逃走 ${r.escaped}${r.demo?' · 演示':''}`;list.append(p);}modal($('#historyDialog'));};
-function toggleSound(){audio.unlock();audio.enabled=!audio.enabled;$('#soundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#soundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');$('#labSoundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#labSoundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');audio.play('click');};$('#soundBtn').onclick=$('#labSoundBtn').onclick=toggleSound;
+function toggleSound(){audio.enabled=!audio.enabled;if(audio.enabled)audio.unlock();$('#soundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#soundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');$('#labSoundBtn').textContent=`声音 · ${audio.enabled?'开':'关'}`;$('#labSoundBtn').setAttribute('aria-label',audio.enabled?'关闭声音':'开启声音');audio.play('click');};$('#soundBtn').onclick=$('#labSoundBtn').onclick=toggleSound;
 function modal(el){clearInput();if(running)paused=true;el.showModal();audio.unlock();audio.play('click');}
 $('#weaponBtn').onclick=()=>modal($('#weaponDialog'));$('#albumBtn').onclick=()=>modal($('#albumDialog'));
 for(const b of $$('[data-close]'))b.onclick=()=>b.closest('dialog').close();
 for(const d of $$('dialog'))d.addEventListener('close',()=>{if(scene==='hunt'){if(running&&$('#pauseOverlay').classList.contains('hidden'))paused=false;canvas.focus();}else if(d.id==='recipeDialog')$('#changeRecipe'+recipeTarget).focus();else $('#productsBtn').focus();});
 function makeButtons(){const names=actor==='hunter'?{idle:'持枪待机',run:'持枪奔跑',shoot:'发射后坐',jet:'喷气飞行',stun:'受击'}:actor==='creature'?{walk:'走路',run:'奔跑',eat:'吃罐头',startle:'受惊',taunt:'捧腹大笑'}:{idle:'站立',run:actor==='bird'?'飞行':'奔跑',caught:'气球接管',taunt:'边笑边走'};if(!names[action])action=actor==='creature'?'walk':'idle';$('#animationButtons').replaceChildren(...Object.entries(names).map(([id,title])=>{const b=document.createElement('button');b.textContent=title;b.classList.toggle('selected',id===action);b.onclick=async()=>{if(id==='taunt')await audio.unlock();action=id;albumActionStart=performance.now();if(id==='taunt')audio.play('taunt');makeButtons();};return b;}));}
 for(const b of $$('[data-actor]'))b.onclick=()=>{actor=b.dataset.actor;$$('[data-actor]').forEach(x=>x.classList.toggle('selected',x===b));makeButtons();};
+for(const b of $$('[data-hit-voice]'))b.onclick=async()=>{await audio.unlock();audio.play('preyHit',{species:b.dataset.hitVoice});};
 for(const b of $$('[data-sfx]'))b.onclick=async()=>{await audio.unlock();audio.play(b.dataset.sfx);};
 let openingWorkshop=false;
 async function openLab(){
@@ -277,7 +283,9 @@ for(const b of $$('[data-action]')){
  b.onpointerup=e=>{if(pointer===e.pointerId){pointer=null;game.releaseCharge();}};
  b.onpointercancel=b.onlostpointercapture=()=>{if(pointer!==null){pointer=null;game.cancelCharge();}};
 }
+let hudTick=0,labTick=0;
 function frame(ms){
+ if(document.hidden){last=ms;audio.musicTick(false);requestAnimationFrame(frame);return;}
  audio.musicTick(!document.hidden&&(scene!=='hunt'||(running&&!paused)));
  const dt=Math.min(.12,(ms-last)/1000||0);last=ms;renderDt=dt;
  if(running&&!paused&&scene==='hunt'){
@@ -295,15 +303,16 @@ function frame(ms){
    if(dog){game.player.dir=Math.sign(dog.x-game.player.x)||1;game.fire();if(Math.abs(dog.x-game.player.x)<105)input.jump=true;}
   }
   const live={...input};for(const key in pulses){if(pulses[key]>0){live[key]=true;pulses[key]-=step;}}
-  game.update(step,live);});if(game.player.vx&&game.player.grounded)audio.play('step');if(game.player.jet)audio.play('jet');if(['approach','depart'].includes(game.ship.phase))audio.play('shipEngine');if(game.time>nextChatter){const z=game.prey.find(z=>['eat','idle','walk','run'].includes(z.state)&&Math.abs(z.x-game.player.x)<500);if(z){audio.voice(z.state==='eat'?'eat':'curious',.65);nextChatter=game.time+4.5;}else nextChatter=game.time+1;}updateHud();}else simulation.reset();
+  game.update(step,live);});if(game.player.vx&&game.player.grounded)audio.play('step');if(game.player.jet)audio.play('jet');if(['approach','depart'].includes(game.ship.phase))audio.play('shipEngine');if(game.time>nextChatter){const z=game.prey.find(z=>['eat','idle','walk','run'].includes(z.state)&&Math.abs(z.x-game.player.x)<500);if(z){audio.voice(z.state==='eat'?'eat':'curious',.65);nextChatter=game.time+4.5;}else nextChatter=game.time+1;}if((hudTick+=dt)>=1/15){hudTick=0;updateHud();}}else simulation.reset();
  const t=game.time;
- const now=Date.now();for(let i=0;i<lab.machines.length;i++){const pose=compressionPose(lab.machines[i],now),stamp=pose.active?`${lab.machines[i].ends}:${pose.cycle}:${pose.stage}`:'idle';if(scene==='lab'&&Math.floor(i/2)===labFloor&&labSoundState[i]!==stamp){if(pose.stage==='液压下压')audio.play('pressDown');if(pose.stage==='挤压出汁')audio.play('squeeze');if(pose.stage==='压板回升')audio.play('pressUp');if(pose.stage==='输送饮品')audio.play('juiceFlow');if(stamp==='idle'&&labSoundState[i]&&labSoundState[i]!=='idle')audio.play('batchReady');}labSoundState[i]=stamp;}
- const previousSales=lab.sales;if(!playerStore.conflict&&lab.advance(Date.now())){save();if(scene!=='hunt')updateLab();if(scene==='shop'&&lab.sales>previousSales)audio.play('sale');}
+ const now=Date.now();for(let i=0;scene==='lab'&&i<lab.machines.length;i++){const pose=compressionPose(lab.machines[i],now),stamp=pose.active?`${lab.machines[i].ends}:${pose.cycle}:${pose.stage}`:'idle';if(scene==='lab'&&Math.floor(i/2)===labFloor&&labSoundState[i]!==stamp){if(pose.stage==='液压下压')audio.play('pressDown');if(pose.stage==='挤压出汁')audio.play('squeeze');if(pose.stage==='压板回升')audio.play('pressUp');if(pose.stage==='输送饮品')audio.play('juiceFlow');if(stamp==='idle'&&labSoundState[i]&&labSoundState[i]!=='idle')audio.play('batchReady');}labSoundState[i]=stamp;}
+ const previousSales=lab.sales;labTick+=dt;if(labTick>=.25&&!playerStore.conflict&&lab.advance(Date.now())){save();if(scene!=='hunt')updateLab();if(scene==='shop'&&lab.sales>previousSales)audio.play('sale');}
+ if(labTick>=.25)labTick=0;
  if(scene!=='hunt'&&(labRefresh-=dt)<=0){labRefresh=.25;updateLab();}
  if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('#toast').classList.remove('show');}shake*=.88;
  if(!paused){for(const a of particles){a.x+=a.vx*dt;a.y+=a.vy*dt;a.vy+=250*dt;a.life-=dt;}for(let i=particles.length-1;i>=0;i--)if(particles[i].life<=0)particles.splice(i,1);}
  for(const a of catchLabels){a.life-=dt;a.y-=dt*25;}while(catchLabels.length&&catchLabels[0].life<=0)catchLabels.shift();
- if(scene==='hunt'){if(assetsLoaded&&(running||$('#intro').classList.contains('hidden')))render(t);}else renderLab(lc,lab,ms/1000,(x,y,h,species='basic')=>{lc.save();lc.translate(x,y);const size=speciesFor({species}).height;lc.scale(h/size,h/size);drawPrey(lc,images.preyRig,{species,x:0,y:0,dir:1,state:'idle',stride:0},ms/1000);lc.restore();},scene==='shop',images,labFloor);
+ if(scene==='hunt'){if(assetsLoaded&&running&&!paused)render(t);}else renderLab(lc,lab,ms/1000,(x,y,h,species='basic')=>{lc.save();lc.translate(x,y);const size=speciesFor({species}).height;lc.scale(h/size,h/size);drawPrey(lc,images.preyRig,{species,x:0,y:0,dir:1,state:'idle',stride:0},ms/1000);lc.restore();},scene==='shop',images,labFloor);
  if($('#albumDialog').open){pc.clearRect(0,0,800,380);ellipse(pc,400,341,100,11,'#3352381b');if(actor==='hunter'){const f=action==='run'?Math.floor(t*10)%6:({idle:4,shoot:5,jet:6,stun:7}[action]);pc.save();pc.translate(370,343);pc.scale(2.2,2.2);drawHunter(pc,images.hunterRig,{x:0,y:0,dir:1,stride:ms/1000*295,grounded:action!=='jet',vx:action==='run'?295:0,shot:action==='shoot'?.1:0,stun:action==='stun'?.5:0},ms/1000);pc.restore();}else if(action!=='eat'){pc.save();pc.translate(400,343);const size=['hopper','bird'].includes(actor)?2:2.5;pc.scale(size,size);drawPrey(pc,images.preyRig,{species:actor==='creature'?'basic':actor,x:0,y:0,dir:1,state:action,flying:actor==='bird'&&action==='run',timer:(ms-albumActionStart)/1000,stride:ms/1000*(action==='run'?250:72),motionSpeed:action==='run'?250:action==='walk'?72:0},ms/1000);pc.restore();}else sprite(pc,'eat',Math.floor(ms/1000*6)%8,400,343,300,1);}
  if((saveTick+=dt)>=3){saveTick=0;if(running)rememberRound();save();}
  requestAnimationFrame(frame);
@@ -317,3 +326,10 @@ playerStore.beforeLeave=()=>{save();if(running)rememberRound();};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(running)rememberRound();}});
 if(initialSave?.sound===false){audio.enabled=false;$('#soundBtn').textContent=$('#labSoundBtn').textContent='声音 · 关';$('#soundBtn').setAttribute('aria-label','开启声音');$('#labSoundBtn').setAttribute('aria-label','开启声音');}
 if(!assetsLoaded)$('#saveStatus').textContent='正在准备捕猎素材…';
+
+// iOS permits playback at the end of a touch; pointerdown alone is not sufficient on every device.
+const restoreAudio=()=>{if(audio.ctx&&audio.enabled)audio.unlock();};
+document.addEventListener('pointerup',restoreAudio,{passive:true});
+document.addEventListener('touchend',restoreAudio,{passive:true});
+document.addEventListener('keydown',restoreAudio,{passive:true});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)audio.resume();});

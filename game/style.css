@@ -36,7 +36,7 @@
 .machine-action select{width:95%;background:#203e43;color:#f6dfa0;border:2px solid #819b7e;border-radius:.5cqw;font-size:1.15cqw;padding:.35cqw;font-weight:700}.machine-action select:disabled{opacity:.65}.lab-inventory #productsBtn{margin-left:0}.lab-inventory #collectBtn{margin-left:auto}#productsDialog{max-width:860px;width:85vw;max-height:82vh;overflow:auto;border:2px solid #b5c487;border-radius:18px;background:#203e38;color:#ecedcf;padding:25px}#productsDialog::backdrop{background:#091f1be0}#productsDialog h2{color:#f5d776}#closeProducts{float:right;padding:8px 16px;background:#8d9e55;color:white;border:0;border-radius:6px}#productList{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:20px 0}#productList article{background:#304e42;border:1px solid #708167;border-radius:12px;padding:12px}#productList canvas{float:left;width:65px;height:65px}#productList h3{font-size:18px;color:#f0d98d}#productList p{clear:both;font-size:14px;line-height:1.7}#productList b{font-size:14px;color:#d8e6ae}#productsDialog small{color:#adc2ac}
 /* GPT-designed art with real, keyboard-accessible controls and live labels. */
 #pauseOverlay{background:#091c1dc9;backdrop-filter:blur(3px)}
-.pause-art-panel{position:relative;width:62%;aspect-ratio:1363/1154;background:url('../assets/ui/pause-art-v1.webp') center/100% 100% no-repeat;filter:drop-shadow(0 12px 22px #001510b0);border-radius:3cqw;overflow:hidden}
+.pause-art-panel{position:relative;width:62%;aspect-ratio:1363/1154;background:transparent;filter:drop-shadow(0 12px 22px #001510b0);border-radius:3cqw;overflow:hidden}
 .pause-art-panel h2{position:absolute;top:6.3%;left:26%;width:48%;height:12%;display:flex;align-items:center;justify-content:center;margin:0;color:#ffdf69;font-size:4.1cqw;font-weight:1000;letter-spacing:.05em;line-height:1;-webkit-text-stroke:.5px #91621f;text-shadow:0 2px #fff2a7,0 5px #7c541a,0 7px 4px #112b1e}
 .pause-subtitle{position:absolute;top:19.6%;left:15%;width:70%;margin:0;text-align:center;font-size:1.2cqw;font-weight:800;color:#fff0c7;letter-spacing:.06em}
 .pause-art-panel button{position:absolute;margin:0;padding:0;background:transparent;border:0;box-shadow:none;color:#183520;font-weight:1000;transition:background .15s,box-shadow .15s,transform .1s}
@@ -146,3 +146,12 @@
 dialog{touch-action:pan-x pan-y pinch-zoom}
 dialog button{touch-action:manipulation}
 .game-shell input,.game-shell textarea,.game-shell [contenteditable]:not([contenteditable="false"]){-webkit-user-select:text;user-select:text;-webkit-touch-callout:default;touch-action:manipulation}
+
+/* The menu is predecoded; only visibility changes when the player pauses. */
+.pause-menu-art{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;opacity:0}
+.pause-art-panel.art-ready .pause-menu-art{opacity:1}
+.pause-art-panel:not(.art-ready){background:linear-gradient(145deg,#305b47,#153e33);border:2px solid #c7b16a;box-shadow:inset 0 0 0 5px #183b2c}
+.pause-art-panel:not(.art-ready) .pause-tile{background:linear-gradient(#ecdfb3,#c8b888);box-shadow:0 4px #0c2d24}
+.pause-art-panel:not(.art-ready) .pause-tile span{bottom:42%}
+.pause-art-panel:not(.art-ready) .pause-resume{background:linear-gradient(#ffe887,#e5b62c);box-shadow:0 4px #0c2d24;padding-left:0}
+.pause-art-panel:not(.art-ready) .pause-restart{background:#335e40;border:2px solid #80905d;padding-left:0}

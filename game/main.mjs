@@ -1,4 +1,5 @@
 import {trackGameStart} from './analytics.mjs';
+import {preparePauseMenu} from './pause-menu.mjs';
 import {installGameGestures} from './game-gestures.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
 import {loadHunt,loadWorkshop} from './scene-assets.mjs?v=mobile-load-13';
@@ -18,6 +19,7 @@ import {AudioEngine} from './audio.mjs?v=hit-voices-8';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const canvas=$('#game'),c=canvas.getContext('2d'),preview=$('#preview'),pc=preview.getContext('2d');
 window.naiwaLoader?.moduleReady();
+const pauseMenuReady=preparePauseMenu($('#pauseMenuArt'),$('.pause-art-panel'));
 const images={};let assetsLoaded=false,loadGeneration=0;
 function load(){const generation=++loadGeneration;return loadHunt(images,(done,total)=>{if(generation!==loadGeneration)return;window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
 // Start art downloads while the cloud save is being read, rather than afterwards.
@@ -324,7 +326,7 @@ function frame(ms){
  requestAnimationFrame(frame);
 }
 makeButtons();updateBank();$('#touchControls').classList.add('hidden');$('#statusBar').classList.add('hidden');requestAnimationFrame(frame);
-function finishLoading(promise){promise.then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
+function finishLoading(promise){Promise.all([promise,pauseMenuReady]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
 finishLoading(huntLoad);
 $('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
 

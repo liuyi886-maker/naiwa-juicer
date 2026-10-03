@@ -13,7 +13,7 @@ export function createAssetLoader({imageFactory=()=>new Image(),fetcher=(...args
    const stop=winner=>{for(const t of timers)clearTimeout(t);for(const [i,im] of attempts){im.onload=im.onerror=null;if(i!==winner)im.src='';}};
    function launch(index){
     if(settled||index>=urls.length||attempts.has(index))return;
-    const im=imageFactory();attempts.set(index,im);im.decoding='async';im.crossOrigin='anonymous';
+    const im=imageFactory();attempts.set(index,im);im.assetKey=url;im.decoding='async';im.crossOrigin='anonymous';
     let failed=false;
     const fail=()=>{if(settled||failed)return;failed=true;im.onload=im.onerror=null;im.src='';failures++;launch(index+1);if(failures===urls.length){settled=true;stop();reject(new Error(`图片暂时无法加载: ${url}`));}};
     timers.push(setTimeout(fail,imageTimeoutMs));

@@ -237,7 +237,7 @@ function updateLab(){
  const supply=shopSupply(lab,Date.now()),shopText=`${supply.title}，${supply.detail}，累计售出 ${lab.sales} 份，可收取 ${lab.cash} 金币`;if($('#shopStatus').textContent!==shopText)$('#shopStatus').textContent=shopText;
  $('#labCoins').textContent=`金币 ${bank}`;$('#stockLabel').textContent=`角色库存 ${lab.stock}`;$('#cupsLabel').textContent=`成品库存 ${lab.cups}`;
  $('#upgradeBtn').textContent=level>=3?'装填速度已升满':`升级装填速度 · ${80+level*40} 金币`;$('#upgradeBtn').disabled=level>=3||bank<80+level*40;
- $('#collectBtn').textContent=`收取营业收入 · ${lab.cash}`;$('#collectBtn').disabled=!lab.cash;
+ $('#collectBtn').textContent=lab.cash?`可领取 · ${lab.cash} 金币`:'暂无收益';$('#collectBtn').disabled=!lab.cash;
  for(let i=0;i<2;i++){const idx=labFloor*2+i,m=lab.machines[idx];
   const r=lab.recipe(idx),select=$('#recipe'+i);select.value=m.recipeId;
   const art=$('#productArt'+i);if(workshopAssetState==='ready'&&art.getAttribute('src')!==productImageSource(r.id))art.src=productImageSource(r.id);art.alt=r.name;

@@ -65,7 +65,10 @@
 .lab-scene .lab-inventory,.lab-scene:not(.is-shop) .lab-inventory{left:3%;right:3%;top:13%;height:5.5%;gap:1cqw;font-size:1.25cqw}
 .lab-scene .lab-inventory span,.lab-scene:not(.is-shop) .lab-inventory span{background:#102c36df;border:1px solid #738c7a70;border-radius:.6cqw;padding:.5cqw .8cqw;font-size:1.15cqw}
 .lab-scene .lab-inventory button{font-size:1.15cqw;padding:.45cqw .9cqw;border:1px solid #9ba77c;background:#244e4a;border-radius:.65cqw}
-.lab-scene .lab-inventory #collectBtn{color:#ffe49b;border-color:#997d46;background:#153c40}
+.lab-scene .lab-inventory #collectBtn{color:#49300d;border:2px solid #ffe9a2;background:linear-gradient(#ffe58d,#f5bf43);border-radius:.8cqw;padding:.55cqw 1.2cqw;font-size:1.4cqw;font-weight:900;white-space:nowrap;text-shadow:0 1px #fff0bc;box-shadow:inset 0 2px #fff4c7,0 3px 0 #8b591e,0 4px 8px #071d2966;opacity:1}
+.lab-scene .lab-inventory #collectBtn:active:not(:disabled){transform:translateY(2px);background:linear-gradient(#f5bf43,#eaaa2d);box-shadow:inset 0 1px #ffe59a,0 1px 0 #8b591e}
+.lab-scene .lab-inventory #collectBtn:focus-visible{outline:3px solid #fff9dd;outline-offset:3px}
+.lab-scene .lab-inventory #collectBtn:disabled{color:#c2cfc3;background:#34534e;border-color:#72877a;text-shadow:none;box-shadow:inset 0 1px #8ba39633;opacity:1}
 .lab-scene:not(.is-shop) #labStatus{top:20%;left:30%;right:30%;font-size:1cqw;line-height:1.4;background:#102a32aa;border:0;border-radius:2cqw;padding:.4cqw;color:#d9dfcb}
 .lab-scene:not(.is-shop) .machine-action{bottom:2%;width:39%;height:28%;padding:1cqw 1.25cqw .7cqw;gap:.5cqw;border:3px solid #b08b42;border-radius:1.8cqw;background:linear-gradient(130deg,#fff2ce,#e4d1a3);box-shadow:inset 0 0 0 3px #fff6db,inset 0 0 0 5px #c8b178,0 5px 0 #30281d,0 8px 18px #0005;align-items:stretch;color:#284137;text-shadow:none}
 .machine-action.first{left:3.5%}.machine-action.second{left:auto;right:3.5%}

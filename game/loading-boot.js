@@ -18,5 +18,5 @@
  poster.addEventListener('load',reveal);if(poster.complete)reveal();
  document.querySelector('#intro').setAttribute('aria-busy','true');
  let shownBytes=-1;
- const byteTimer=setInterval(()=>{const p=window.naiwaStartupProgress;if(ready||failed||moduleLoaded||!p||p.loaded===shownBytes)return;shownBytes=p.loaded;bar.max=100;bar.value=p.loaded/p.total*90;title.textContent=`游戏加载中 · ${Math.round(bar.value)}%`;detail.textContent=`正在下载完整游戏素材 ${(p.loaded/1048576).toFixed(1)} / ${(p.total/1048576).toFixed(1)} MB`;},150);
+ const byteTimer=setInterval(()=>{const p=window.naiwaStartupProgress;if(ready||failed||moduleLoaded||!p||p.loaded===shownBytes)return;shownBytes=p.loaded;bar.max=100;bar.value=p.loaded/p.total*90;title.textContent=`游戏加载中 · ${Math.round(bar.value)}%`;detail.textContent=`正在下载捕猎素材 ${(p.loaded/1048576).toFixed(1)} / ${(p.total/1048576).toFixed(1)} MB`;},150);
 })();

@@ -165,3 +165,8 @@ dialog button{touch-action:manipulation}
 #workshopAssetNotice button{font-size:1.1cqw;padding:.3cqw .7cqw;margin-left:.6cqw}
 
 .machine-product img.art-unavailable{visibility:hidden}
+
+/* Never expose unfinished workshop paintings while its background download completes. */
+#workshop.art-loading #workshopAssetNotice{inset:14% 0 0;z-index:8;border-radius:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1em;background:radial-gradient(ellipse at 50% 40%,#315c4c,#122d28);font-size:clamp(16px,2cqw,26px);color:#ffe8a1}
+#workshop.art-loading #retryWorkshopArt{font-size:inherit;padding:.6em 1.2em}
+#workshop.art-loading #labCanvas{visibility:hidden}

@@ -6,7 +6,8 @@ import {TAUNT_DURATION,TAUNT_AUDIO_OFFSET} from './taunt.mjs?v=hunt-fixes-7';
 export const HIT_VOICE_FILES=Object.freeze({basic:'05-andi.wav',bird:'04-oula.wav',hopper:'02-gajiaosai.wav',shell:'03-gangbadi.wav',longbody:'01-gagadilaxi.wav'});
 export class AudioEngine {
  constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();
-  if(embeddedMusicUrl&&typeof Audio==='function'){this.preparedMusic=new Audio();this.preparedMusic.preload='auto';this.preparedMusic.crossOrigin='anonymous';this.preparedMusic.loop=true;this.preparedMusic.playsInline=true;this.preparedMusic.src=embeddedMusicUrl;this.preparedMusic.load();}
+  if(embeddedMusicUrl&&globalThis.naiwaPreparedMusic){this.preparedMusic=globalThis.naiwaPreparedMusic;}
+  else if(embeddedMusicUrl&&typeof Audio==='function'){this.preparedMusic=new Audio();this.preparedMusic.preload='auto';this.preparedMusic.crossOrigin='anonymous';this.preparedMusic.loop=true;this.preparedMusic.playsInline=true;this.preparedMusic.src=embeddedMusicUrl;this.preparedMusic.load();}
  }
  loadBuffer(url){
   if(this.pending.has(url))return this.pending.get(url);

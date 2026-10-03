@@ -23,8 +23,7 @@ window.naiwaLoader?.moduleReady();
 const pauseMenuReady=preparePauseMenu($('#pauseMenuArt'),$('.pause-art-panel'));
 const images={};let assetsLoaded=false,loadGeneration=0;
 function load(){const generation=++loadGeneration;return loadHunt(images,(done,total)=>{if(generation!==loadGeneration)return;window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
-// Start art downloads while the cloud save is being read, rather than afterwards.
-let workshopLoad=loadWorkshop(images);workshopLoad.catch(()=>{});
+// Hunt artwork takes priority; workshop art warms immediately after the hunt is ready.
 let huntLoad=load();huntLoad.catch(()=>{});
 const playerStore=new PlayerStore();
 const initialSave=await playerStore.init();
@@ -222,9 +221,9 @@ for(const art of $$('.machine-product img')){art.addEventListener('error',()=>ar
 let workshopAssetState='idle';
 function prepareWorkshopArt(){
  if(workshopAssetState==='loading'||workshopAssetState==='ready')return;
- workshopAssetState='loading';$('#workshopAssetNotice').hidden=false;$('#workshopAssetMessage').textContent='正在加载工坊画面，可先操作设备';$('#retryWorkshopArt').hidden=true;
- loadWorkshop(images).then(()=>{workshopAssetState='ready';for(let i=0;i<2;i++)$('#productArt'+i).src=productImageSource(lab.recipe(labFloor*2+i).id);$('#workshopAssetNotice').hidden=true;}).catch(()=>{
-  workshopAssetState='error';$('#workshopAssetMessage').textContent='部分画面未加载，生产与库存仍可使用';$('#retryWorkshopArt').hidden=false;
+ workshopAssetState='loading';$('#productsBtn').disabled=true;$('#workshop').classList.add('art-loading');$('#workshopAssetNotice').hidden=false;$('#workshopAssetMessage').textContent='正在准备工坊画面…';$('#retryWorkshopArt').hidden=true;
+ loadWorkshop(images).then(()=>{workshopAssetState='ready';$('#productsBtn').disabled=false;$('#workshop').classList.remove('art-loading');for(let i=0;i<2;i++)$('#productArt'+i).src=productImageSource(lab.recipe(labFloor*2+i).id);$('#workshopAssetNotice').hidden=true;}).catch(()=>{
+  workshopAssetState='error';$('#workshopAssetMessage').textContent='工坊画面连接较慢，请重试；进度已保留';$('#retryWorkshopArt').hidden=false;
  });
 }
 function openLab(){
@@ -241,7 +240,7 @@ function updateLab(){
  $('#collectBtn').textContent=`收取营业收入 · ${lab.cash}`;$('#collectBtn').disabled=!lab.cash;
  for(let i=0;i<2;i++){const idx=labFloor*2+i,m=lab.machines[idx];
   const r=lab.recipe(idx),select=$('#recipe'+i);select.value=m.recipeId;
-  const art=$('#productArt'+i);if(art.getAttribute('src')!==productImageSource(r.id))art.src=productImageSource(r.id);art.alt=r.name;
+  const art=$('#productArt'+i);if(workshopAssetState==='ready'&&art.getAttribute('src')!==productImageSource(r.id))art.src=productImageSource(r.id);art.alt=r.name;
   $('#productName'+i).textContent=r.name;$('#machineLabel'+i).textContent=`设备 ${idx+1} · ${m.unlocked?'Lv.'+(m.level+1):'未购置'}`;
   $('#recipeSummary'+i).textContent=`${r.ingredient} ${r.cost} 只 → ${r.cups} 份 · ${Math.round(r.seconds/(1+m.level*.3))} 秒`;
   $('#ingredientStatus'+i).textContent=m.ends?'加工中 · 完成后自动送往店铺':`可用原料 ${lab.stocks[r.species]} 只${lab.stocks[r.species]<r.cost?' · 原料不足':''}`;
@@ -342,9 +341,9 @@ function frame(ms){
  requestAnimationFrame(frame);
 }
 makeButtons();updateBank();$('#touchControls').classList.add('hidden');$('#statusBar').classList.add('hidden');requestAnimationFrame(frame);
-function finishLoading(promise){Promise.all([promise,pauseMenuReady,workshopLoad]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
+function finishLoading(promise){Promise.all([promise,pauseMenuReady]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);setTimeout(prepareWorkshopArt,300);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
 finishLoading(huntLoad);
-$('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;workshopLoad=loadWorkshop(images);workshopLoad.catch(()=>{});huntLoad=load();finishLoading(huntLoad);};
+$('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
 
 playerStore.beforeLeave=()=>{save();if(running)rememberRound();};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(running)rememberRound();}});

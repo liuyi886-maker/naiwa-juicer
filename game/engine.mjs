@@ -2,6 +2,7 @@ import {speciesFor,ENCOUNTER_SPECIES,capturePoint,escapeSpeed,birdFlightHeight} 
 import {TAUNT_DURATION,TAUNT_APPROACH,ESCAPE_JUMP_DURATION,escapeJumpOffset} from './taunt.mjs?v=hunt-fixes-7';
 import {approach,updatePose} from './motion.mjs?v=hunt-fixes-7';
 import {EMERGE_SECONDS} from './emergence.mjs?v=hunt-fixes-7';
+import {EAT_SECONDS,EAT_CYCLE,eatingReach,currentEater} from './eating.mjs';
 export const BAIT_SUPPLY_SECONDS = 10;
 export const HIT_SLOW = {duration:.35,reduction:.25};
 export const MUZZLE = {x:79,y:-84};
@@ -208,7 +209,7 @@ export class Game {
     if(p.y>675){p.x=p.lastSafe;p.y=groundAt(p.x)??WORLD.floor;p.vy=0;p.fuel=100;p.stun=.8;this.emit('fall');}
     if(p.y<165){p.y=165;p.vy=Math.max(0,p.vy);}
     for(const b of this.baits){
-      b.life-=dt;
+      if(!currentEater(b,this.prey)){delete b.eaterId;b.life-=dt;}
       if(!b.landed){
         // Small swept steps handle corners as well as either face of a raised block.
         const steps=Math.max(1,Math.ceil(dt/(1/120))),step=dt/steps;
@@ -226,7 +227,7 @@ export class Game {
       if(z.state==='escaped'||z.state==='delivered')continue;
       z.timer+=dt;z.anim+=dt;z.turnLock=Math.max(0,z.turnLock-dt);if(z.state==='emerging'&&z.timer>=.53&&z.timer-dt<.53)this.emit('emergePop',{x:z.x});z.hitFlash=Math.max(0,z.hitFlash-dt);z.hitDisplay=Math.max(0,(z.hitDisplay||0)-dt);z.hitSlow=Math.max(0,(z.hitSlow||0)-dt);
       const habitat=LAND.find(s=>z.home>=s.x&&z.home<=s.end);
-      const b=this.baits.filter(b=>b.landed&&b.x>habitat.x+35&&b.x<habitat.end-35&&Math.abs(b.x-z.home)<320).sort((a,b)=>Math.abs(a.x-z.x)-Math.abs(b.x-z.x))[0];
+      const b=this.baits.filter(b=>b.life>0&&b.landed&&(!currentEater(b,this.prey)||b.eaterId===z.id)&&Math.abs(b.y-z.y)<24&&b.x>habitat.x+35&&b.x<habitat.end-35&&Math.abs(b.x-z.home)<320).sort((a,b)=>Number(b.eaterId===z.id)-Number(a.eaterId===z.id)||Math.abs(a.x-z.x)-Math.abs(b.x-z.x))[0];
       const near=Math.abs(p.x-z.x)<330&&Math.abs(p.y-z.y)<190;const oldX=z.x;
       // Fear follows the hunter's position, including an airborne interception.
       // A body-width dead zone and short turn lock prevent close-range flip-flopping.
@@ -245,9 +246,16 @@ export class Game {
         if(near){z.state='startle';z.timer=0;z.dir=Math.sign(z.x-p.x)||1;this.emit('startle',{x:z.x});}
         else if(b){
           const d=b.x-z.x;z.dir=Math.sign(d)||z.dir;
-          if(Math.abs(d)>32){z.state='walk';z.x+=Math.sign(d)*72*dt;}
-          else {if(z.state!=='eat')z.timer=0;z.state='eat';if(z.timer>5){b.life=0;z.state='idle';z.timer=0;}}
-        }else {z.state='idle';if(z.timer>7){z.state='run';z.dir=Math.sign(z.x-p.x)||z.dir;z.timer=0;}}
+          const reach=eatingReach(z);
+          if(!z.grounded||Math.abs(d)>reach+1){z.state='walk';z.x+=Math.sign(d)*Math.min(Math.max(0,Math.abs(d)-reach),72*dt);}
+          else {
+            if(z.state!=='eat'){z.timer=0;z.eatBite=0;this.emit('eatStart',{id:z.id,x:z.x,species:z.species});}
+            z.state='eat';b.eaterId=z.id;b.eaten=(b.eaten||0)+dt;
+            const bite=Math.max(0,Math.floor((z.timer-.4)/EAT_CYCLE)+1);
+            if(bite>(z.eatBite||0)){z.eatBite=bite;this.emit('eatBite',{id:z.id,x:z.x,y:z.y,species:z.species});}
+            if(b.eaten>=EAT_SECONDS){b.life=0;delete b.eaterId;z.state='idle';z.timer=0;this.emit('baitEaten',{id:z.id,x:z.x,species:z.species});}
+          }
+        }else {if(z.state!=='idle')z.timer=0;z.state='idle';if(z.timer>7){z.state='run';z.dir=Math.sign(z.x-p.x)||z.dir;z.timer=0;}}
       }else if(z.state==='startle'&&z.timer>(z.species==='hopper'?.22:.5)){z.state='run';z.timer=0;}
       else if(z.state==='run'){
         // Recompute the escape shore after a hunter interception changes direction.

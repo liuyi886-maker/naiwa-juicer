@@ -2,6 +2,7 @@ import {trackGameStart} from './analytics.mjs';
 import {preparePauseMenu} from './pause-menu.mjs';
 import {installGameGestures} from './game-gestures.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
+import {currentEater,EAT_SECONDS} from './eating.mjs';
 import {loadHunt,loadWorkshop} from './scene-assets.mjs?v=mobile-load-13';
 import {PlayerStore,snapshotGame,restoreGame} from './player-store.mjs?v=static-14';
 import {RECIPES,drawProduct,productImageSource} from './products.mjs?v=mobile-load-13';
@@ -49,6 +50,7 @@ function toast(s){toastKind='';$('#toast').textContent=s;$('#toast').classList.a
 const game=new Game({level,onEvent:e=>{
  audio.play(e.type,e);
  if(e.type==='startle')audio.voice('alert');
+ if(e.type==='eatBite'&&Math.abs(e.x-game.player.x)<650){audio.voice('eat',.45);}
  if(e.type==='capture'){burst(e.x,e.y-70,'#ffdd55',18);shake=4;catchLabels.push({x:e.x,y:e.y-135,life:1.2});}
  if(e.type==='resistHit'){burst(e.x,e.y-60,'#ffe79d',7);shake=2;}
  if(e.type==='pickup')toast('运输笼正在回收目标');
@@ -138,7 +140,7 @@ function render(t){
  }
  for(const platform of PLATFORMS){grass(platform.x+26,platform.y,.45,3);grass(platform.x+platform.w-22,platform.y,.5,9);}
  for(const z of game.prey)if(inView(z.home))drawBurrow(c,z,groundAt(z.home),t);
- for(const b of game.baits)if(inView(b.x))can(b.x,b.y);
+ for(const b of game.baits)if(b.life>0&&inView(b.x)&&!currentEater(b,game.prey))can(b.x,b.y);
  for(const z of game.prey){
   if(!inView(z.x,250)||['hidden','escaped','delivered'].includes(z.state))continue;
   let sheet='walk',f=0,y=z.y,h=116;
@@ -154,8 +156,12 @@ function render(t){
   if(z.state==='boarding')h*=1-Math.min(1,z.timer/.85)*.4;
   if(z.state==='boarding'){/* Draw inside the transport cage below. */}
   else if(CAPTURE_STATES.includes(z.state)){c.save();c.translate(z.x,y-h/2);c.rotate(Math.sin(t*7+z.id)*.09);if(z.species!=='basic')drawPrey(c,images.preyRig,{...z,x:0,y:h/2},t);else sprite(c,sheet,f,0,h/2,h,z.dir);c.restore();}
-  else if(z.species!=='basic'||['run','walk','idle','notice','startle','taunt'].includes(z.state))drawPrey(c,images.preyRig,z,t);
+  else if(z.species!=='basic'||['run','walk','idle','notice','startle','taunt','eat'].includes(z.state))drawPrey(c,images.preyRig,z,t);
   else sprite(c,sheet,f,z.x,y,h,z.dir);
+  if(z.state==='eat'){
+   const food=game.baits.find(b=>b.eaterId===z.id&&b.life>0);
+   if(food){round(c,z.x-19,z.y+9,38,5,2,'#123a31');round(c,z.x-18,z.y+10,36*(1-(food.eaten||0)/EAT_SECONDS),3,1,'#ffda68');}
+  }
   drawCaptureResistance(c,z);
   if(z.state==='startle'){c.font='900 40px Impact,system-ui';c.textAlign='center';c.lineWidth=5;c.strokeStyle='#332819';c.strokeText('!',z.x,z.y-h-8);c.fillStyle='#ff6425';c.fillText('!',z.x,z.y-h-8);}
  }
@@ -208,7 +214,7 @@ function modal(el){clearInput();if(running)paused=true;el.showModal();audio.unlo
 $('#weaponBtn').onclick=()=>modal($('#weaponDialog'));$('#albumBtn').onclick=()=>modal($('#albumDialog'));
 for(const b of $$('[data-close]'))b.onclick=()=>b.closest('dialog').close();
 for(const d of $$('dialog'))d.addEventListener('close',()=>{if(scene==='hunt'){if(running&&$('#pauseOverlay').classList.contains('hidden'))paused=false;canvas.focus();}else if(d.id==='recipeDialog')$('#changeRecipe'+recipeTarget).focus();else $('#productsBtn').focus();});
-function makeButtons(){const names=actor==='hunter'?{idle:'持枪待机',run:'持枪奔跑',shoot:'发射后坐',jet:'喷气飞行',stun:'受击'}:actor==='creature'?{walk:'走路',run:'奔跑',eat:'吃罐头',startle:'受惊',taunt:'捧腹大笑'}:{idle:'站立',run:actor==='bird'?'飞行':'奔跑',caught:'气球接管',taunt:'边笑边走'};if(!names[action])action=actor==='creature'?'walk':'idle';$('#animationButtons').replaceChildren(...Object.entries(names).map(([id,title])=>{const b=document.createElement('button');b.textContent=title;b.classList.toggle('selected',id===action);b.onclick=async()=>{if(id==='taunt')await audio.unlock();action=id;albumActionStart=performance.now();if(id==='taunt')audio.play('taunt');makeButtons();};return b;}));}
+function makeButtons(){const names=actor==='hunter'?{idle:'持枪待机',run:'持枪奔跑',shoot:'发射后坐',jet:'喷气飞行',stun:'受击'}:actor==='creature'?{walk:'走路',run:'奔跑',eat:'吃罐头',startle:'受惊',taunt:'捧腹大笑'}:{idle:'站立',run:actor==='bird'?'飞行':'奔跑',eat:'吃罐头',caught:'气球接管',taunt:'边笑边走'};if(!names[action])action=actor==='creature'?'walk':'idle';$('#animationButtons').replaceChildren(...Object.entries(names).map(([id,title])=>{const b=document.createElement('button');b.textContent=title;b.classList.toggle('selected',id===action);b.onclick=async()=>{if(id==='taunt')await audio.unlock();action=id;albumActionStart=performance.now();if(id==='taunt')audio.play('taunt');makeButtons();};return b;}));}
 for(const b of $$('[data-actor]'))b.onclick=()=>{actor=b.dataset.actor;$$('[data-actor]').forEach(x=>x.classList.toggle('selected',x===b));makeButtons();};
 for(const b of $$('[data-hit-voice]'))b.onclick=async()=>{await audio.unlock();audio.play('preyHit',{species:b.dataset.hitVoice});};
 for(const b of $$('[data-sfx]'))b.onclick=async()=>{await audio.unlock();audio.play(b.dataset.sfx);};
@@ -321,7 +327,7 @@ function frame(ms){
    if(dog){game.player.dir=Math.sign(dog.x-game.player.x)||1;game.fire();if(Math.abs(dog.x-game.player.x)<105)input.jump=true;}
   }
   const live={...input};for(const key in pulses){if(pulses[key]>0){live[key]=true;pulses[key]-=step;}}
-  game.update(step,live);});if(game.player.vx&&game.player.grounded)audio.play('step');if(game.player.jet)audio.play('jet');if(['approach','depart'].includes(game.ship.phase))audio.play('shipEngine');if(game.time>nextChatter){const z=game.prey.find(z=>['eat','idle','walk','run'].includes(z.state)&&Math.abs(z.x-game.player.x)<500);if(z){audio.voice(z.state==='eat'?'eat':'curious',.65);nextChatter=game.time+4.5;}else nextChatter=game.time+1;}if((hudTick+=dt)>=1/15){hudTick=0;updateHud();}}else simulation.reset();
+  game.update(step,live);});if(game.player.vx&&game.player.grounded)audio.play('step');if(game.player.jet)audio.play('jet');if(['approach','depart'].includes(game.ship.phase))audio.play('shipEngine');if(game.time>nextChatter){const z=game.prey.find(z=>['idle','walk','run'].includes(z.state)&&Math.abs(z.x-game.player.x)<500);if(z){audio.voice('curious',.65);nextChatter=game.time+4.5;}else nextChatter=game.time+1;}if((hudTick+=dt)>=1/15){hudTick=0;updateHud();}}else simulation.reset();
  const t=game.time;
  const now=Date.now();for(let i=0;scene==='lab'&&i<lab.machines.length;i++){const pose=compressionPose(lab.machines[i],now),stamp=pose.active?`${lab.machines[i].ends}:${pose.cycle}:${pose.stage}`:'idle';if(scene==='lab'&&Math.floor(i/2)===labFloor&&labSoundState[i]!==stamp){if(pose.stage==='液压下压')audio.play('pressDown');if(pose.stage==='挤压出汁')audio.play('squeeze');if(pose.stage==='压板回升')audio.play('pressUp');if(pose.stage==='输送饮品')audio.play('juiceFlow');if(stamp==='idle'&&labSoundState[i]&&labSoundState[i]!=='idle')audio.play('batchReady');}labSoundState[i]=stamp;}
  const previousSales=lab.sales;labTick+=dt;if(labTick>=.25&&!playerStore.conflict&&lab.advance(Date.now())){save();if(scene!=='hunt')updateLab();if(scene==='shop'&&lab.sales>previousSales)audio.play('sale');}
@@ -331,7 +337,7 @@ function frame(ms){
  if(!paused){for(const a of particles){a.x+=a.vx*dt;a.y+=a.vy*dt;a.vy+=250*dt;a.life-=dt;}for(let i=particles.length-1;i>=0;i--)if(particles[i].life<=0)particles.splice(i,1);}
  for(const a of catchLabels){a.life-=dt;a.y-=dt*25;}while(catchLabels.length&&catchLabels[0].life<=0)catchLabels.shift();
  if(scene==='hunt'){if(assetsLoaded&&running&&!paused)render(t);}else renderLab(lc,lab,ms/1000,(x,y,h,species='basic')=>{lc.save();lc.translate(x,y);const size=speciesFor({species}).height;lc.scale(h/size,h/size);drawPrey(lc,images.preyRig,{species,x:0,y:0,dir:1,state:'idle',stride:0},ms/1000);lc.restore();},scene==='shop',images,labFloor);
- if($('#albumDialog').open){pc.clearRect(0,0,800,380);ellipse(pc,400,341,100,11,'#3352381b');if(actor==='hunter'){const f=action==='run'?Math.floor(t*10)%6:({idle:4,shoot:5,jet:6,stun:7}[action]);pc.save();pc.translate(370,343);pc.scale(2.2,2.2);drawHunter(pc,images.hunterRig,{x:0,y:0,dir:1,stride:ms/1000*295,grounded:action!=='jet',vx:action==='run'?295:0,shot:action==='shoot'?.1:0,stun:action==='stun'?.5:0},ms/1000);pc.restore();}else if(action!=='eat'){pc.save();pc.translate(400,343);const size=['hopper','bird'].includes(actor)?2:2.5;pc.scale(size,size);drawPrey(pc,images.preyRig,{species:actor==='creature'?'basic':actor,x:0,y:0,dir:1,state:action,flying:actor==='bird'&&action==='run',timer:(ms-albumActionStart)/1000,stride:ms/1000*(action==='run'?250:72),motionSpeed:action==='run'?250:action==='walk'?72:0},ms/1000);pc.restore();}else sprite(pc,'eat',Math.floor(ms/1000*6)%8,400,343,300,1);}
+ if($('#albumDialog').open){pc.clearRect(0,0,800,380);ellipse(pc,400,341,100,11,'#3352381b');if(actor==='hunter'){const f=action==='run'?Math.floor(t*10)%6:({idle:4,shoot:5,jet:6,stun:7}[action]);pc.save();pc.translate(370,343);pc.scale(2.2,2.2);drawHunter(pc,images.hunterRig,{x:0,y:0,dir:1,stride:ms/1000*295,grounded:action!=='jet',vx:action==='run'?295:0,shot:action==='shoot'?.1:0,stun:action==='stun'?.5:0},ms/1000);pc.restore();}else{pc.save();pc.translate(400,343);const size=['hopper','bird'].includes(actor)?2:2.5;pc.scale(size,size);drawPrey(pc,images.preyRig,{species:actor==='creature'?'basic':actor,x:0,y:0,dir:1,state:action,flying:actor==='bird'&&action==='run',timer:(ms-albumActionStart)/1000,stride:ms/1000*(action==='run'?250:72),motionSpeed:action==='run'?250:action==='walk'?72:0},ms/1000);pc.restore();}}
  if((saveTick+=dt)>=3){saveTick=0;if(running)rememberRound();save();}
  requestAnimationFrame(frame);
 }

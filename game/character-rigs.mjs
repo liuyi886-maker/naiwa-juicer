@@ -2,6 +2,7 @@ import {assets} from './asset-loader.mjs?v=mobile-load-13';
 import {drawWholeRunner,drawWholePose,runFrame} from './fullbody.mjs?v=hunt-fixes-7';
 import {speciesFor} from './species.mjs?v=hunter-avoidance-12';
 import {RUN_CYCLE} from './motion.mjs?v=hunt-fixes-7';
+import {eatingFrame} from './eating.mjs';
 const TAU=Math.PI*2;
 export function gaitFoot(phase){
  const q=((phase/TAU)%1+1)%1,stance=.35,reach=RUN_CYCLE*stance/2;
@@ -43,6 +44,11 @@ export function drawDog(c,im,d,time){
 }
 export function drawPrey(c,im,z,time){
  if(!im)return;
+ if(z.state==='eat'){
+  const meta=z.species==='basic'||!z.species?im.eatMeta:im.eatingMeta?.[z.species];
+  const atlas=z.species==='basic'||!z.species?im.eatAtlas:im.eatingAtlas;
+  if(meta&&atlas)return drawWholePose(c,atlas,meta,eatingFrame(z.timer,meta.frames.length),z.x,z.y,speciesFor(z).height,z.dir);
+ }
  if(z.species&&z.species!=='basic'){drawSpecies(c,im,z,time);return;}
  const taunt=z.state==='taunt'&&im.tauntAtlas&&im.tauntMeta;
  const meta=taunt?im.tauntMeta:im.runMeta,atlas=taunt?im.tauntAtlas:im.runAtlas;

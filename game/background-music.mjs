@@ -1,8 +1,8 @@
 // Stream the original recording instead of waiting for the entire file to decode.
 export class BackgroundMusic {
- constructor(context,output,{url,mirrors=[],audioFactory=()=>new Audio(),onStatus=()=>{},stallMs=8000}={}){
+ constructor(context,output,{url,mirrors=[],loop=true,audioFactory=()=>new Audio(),onStatus=()=>{},stallMs=8000}={}){
   this.urls=[url,...mirrors.map(base=>base+url)];this.index=0;this.generation=0;this.desired=false;this.pending=false;this.stallMs=stallMs;this.onStatus=onStatus;
-  this.media=audioFactory();this.media.preload='auto';this.media.crossOrigin='anonymous';this.media.loop=true;this.media.playsInline=true;
+  this.media=audioFactory();this.media.preload='auto';this.media.crossOrigin='anonymous';this.media.loop=loop;this.media.playsInline=true;
   this.node=context.createMediaElementSource(this.media);this.node.connect(output);
   this.media.addEventListener('playing',()=>{this.clearWatch();this.setStatus('playing');});
   this.media.addEventListener('waiting',()=>this.watch());
@@ -14,6 +14,14 @@ export class BackgroundMusic {
  clearWatch(){clearTimeout(this.timer);this.timer=null;}
  watch(){if(!this.desired||this.timer)return;this.timer=setTimeout(()=>{this.timer=null;if(this.desired&&this.media.readyState<3)this.nextSource();},this.stallMs);}
  setSource(){this.clearWatch();this.generation++;this.pending=false;if(this.media.src!==this.urls[this.index]&&this.media.getAttribute?.('src')!==this.urls[this.index])this.media.src=this.urls[this.index];this.setStatus('loading');}
+ replaceSource(url){
+  if(this.urls[this.index]===url)return;
+  const time=this.media.currentTime||0;this.urls=[url];this.index=0;this.media.loop=true;this.setSource();
+  const generation=this.generation;
+  const seek=()=>{if(generation===this.generation&&time>0)try{this.media.currentTime=Number.isFinite(this.media.duration)?Math.min(time,Math.max(0,this.media.duration-.01)):time;}catch{}};
+  if(this.media.readyState>=1)seek();else this.media.addEventListener('loadedmetadata',seek,{once:true});
+  if(this.desired)this.play();
+ }
  nextSource(){
   this.clearWatch();if(this.index>=this.urls.length-1){this.setStatus('error');return;}
   this.index++;this.setSource();if(this.desired)this.play();

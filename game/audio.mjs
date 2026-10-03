@@ -1,13 +1,14 @@
 import {BackgroundMusic} from './background-music.mjs';
-import {embeddedAudio,audioMirrors,embeddedMusicUrl} from './audio-files.mjs';
+import {embeddedAudio,audioMirrors,embeddedMusicUrl,embeddedMusicReady,embeddedMusicOpening} from './audio-files.mjs';
 import {downloadAudio} from './audio-download.mjs';
 import {TAUNT_DURATION,TAUNT_AUDIO_OFFSET} from './taunt.mjs?v=hunt-fixes-7';
 // User-approved original clips; numbers refer to the audition order.
 export const HIT_VOICE_FILES=Object.freeze({basic:'05-andi.wav',bird:'04-oula.wav',hopper:'02-gajiaosai.wav',shell:'03-gangbadi.wav',longbody:'01-gagadilaxi.wav'});
 export class AudioEngine {
- constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();
+ constructor(){this.musicUrl=embeddedMusicUrl;this.musicOpening=embeddedMusicOpening;this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();
   if(embeddedMusicUrl&&globalThis.naiwaPreparedMusic){this.preparedMusic=globalThis.naiwaPreparedMusic;}
-  else if(embeddedMusicUrl&&typeof Audio==='function'){this.preparedMusic=new Audio();this.preparedMusic.preload='auto';this.preparedMusic.crossOrigin='anonymous';this.preparedMusic.loop=true;this.preparedMusic.playsInline=true;this.preparedMusic.src=embeddedMusicUrl;this.preparedMusic.load();}
+  else if(embeddedMusicUrl&&typeof Audio==='function'){this.preparedMusic=new Audio();this.preparedMusic.preload='auto';this.preparedMusic.crossOrigin='anonymous';this.preparedMusic.loop=!this.musicOpening;this.preparedMusic.playsInline=true;this.preparedMusic.src=embeddedMusicUrl;this.preparedMusic.load();}
+  embeddedMusicReady?.then(url=>{this.musicUrl=url;this.musicOpening=false;if(this.music)this.music.replaceSource(url);else if(this.preparedMusic){this.preparedMusic.loop=true;this.preparedMusic.src=url;this.preparedMusic.load();}}).catch(()=>{});
  }
  loadBuffer(url){
   if(this.pending.has(url))return this.pending.get(url);
@@ -45,7 +46,7 @@ export class AudioEngine {
    const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return Promise.resolve();
    this.ctx=new Context();this.effects=this.ctx.createGain();this.effects.connect(this.ctx.destination);
    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=0;this.musicGain.connect(this.ctx.destination);this.duckUntil=0;
-   this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:embeddedMusicUrl||'assets/audio/naiwaxxl-bgm-original.mp3',mirrors:embeddedMusicUrl?[]:audioMirrors,...(this.preparedMusic?{audioFactory:()=>this.preparedMusic}:{}),onStatus:status=>this.onMusicStatus?.(status)});
+   this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:this.musicUrl||'assets/audio/naiwaxxl-bgm-original.mp3',loop:!this.musicOpening,mirrors:embeddedMusicUrl?[]:audioMirrors,...(this.preparedMusic?{audioFactory:()=>this.preparedMusic}:{}),onStatus:status=>this.onMusicStatus?.(status)});
    this.ctx.onstatechange=()=>{if(this.ctx.state==='running'){this.effectsTarget=undefined;this.musicTarget=undefined;}};
   }
   this.resume();if(typeof document==='undefined'||!document.hidden)this.music?.play({retry:true});

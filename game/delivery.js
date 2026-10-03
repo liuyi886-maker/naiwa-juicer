@@ -12,10 +12,10 @@
   const launch=async()=>{
    if(settled||started>=order.length)return;const source=order[started++],controller=new AbortController();controllers.push(controller);let received=0,idle,slow;
    const keepAlive=()=>{clearTimeout(idle);idle=setTimeout(()=>{launch();controller.abort();},received?4000:10000);};
-   keepAlive();slow=setTimeout(()=>{if(received<16000)launch();},1200);timers.push(slow);
+   keepAlive();slow=setTimeout(()=>{if(!settled)launch();},1200);timers.push(slow);
    const hard=setTimeout(()=>{launch();controller.abort();},20000);timers.push(hard);
    try{
-    log(path,'request',source);const response=await fetch(bases[source]+path,{signal:controller.signal});if(!response.ok)throw Error('HTTP '+response.status);
+    log(path,'request',source);const base=source===1&&/^[a-f0-9]{40}$/.test(meta.revision||'')?bases[1].replace(/@[^/]+\//,'@'+meta.revision+'/'):bases[source];const response=await fetch(base+path,{signal:controller.signal});if(!response.ok)throw Error('HTTP '+response.status);
     const reader=response.body?.getReader(),parts=[];
     if(reader){for(;;){const {done,value}=await reader.read();if(done)break;parts.push(value);received+=value.length;keepAlive();if(!settled)progress?.(received);}}
     else{const part=new Uint8Array(await response.arrayBuffer());parts.push(part);received=part.length;}
@@ -35,7 +35,7 @@
   })();pending.set(path,job);job.catch(()=>pending.delete(path));return job;
  };
  window.naiwaFetchMedia=async path=>URL.createObjectURL(new Blob([await window.naiwaFetchBytes(path)],{type:manifest[path].type}));
- window.naiwaMusicDownload=window.naiwaFetchMedia('assets/instant-v1/bgm.mp3').catch(()=> 'assets/instant-v1/bgm.mp3');
+ window.naiwaPrepareMusic=()=>window.naiwaMusicDownload??=window.naiwaFetchMedia('assets/instant-v1/bgm.mp3').then(url=>(window.naiwaFullMusicUrl=url)).catch(()=> 'assets/instant-v1/bgm.mp3');
  window.naiwaPrepareCover=()=>window.naiwaFetchMedia(matchMedia('(orientation: portrait)').matches?'assets/instant-v1/title-mobile.webp':'assets/instant-v1/title-screen.webp');
  window.naiwaCoverDownload=window.naiwaPrepareCover();window.naiwaCoverDownload.catch(()=>{});
 })();

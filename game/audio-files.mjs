@@ -2,3 +2,6 @@
 export const embeddedAudio={};
 export const audioMirrors=[];
 export const embeddedMusicUrl='';
+
+export const embeddedMusicReady=null;
+export const embeddedMusicOpening=false;

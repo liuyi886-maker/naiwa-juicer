@@ -9,6 +9,7 @@ export const RECIPES=[
 export const productFor=id=>RECIPES.find(r=>r.id===id)||RECIPES[0];
 const productArt=new Map();
 export const productImagePath=id=>`assets/products/${productFor(id).id}-v1.webp`;
+export const productImageSource=id=>productArt.get(productFor(id).id)?.src||productImagePath(id);
 export async function loadProductArt(){await Promise.all(RECIPES.map(async r=>{const im=await assets.image(productImagePath(r.id));productArt.set(r.id,im);}));}
 export function drawProduct(c,r,x,y,s=1){
  const im=productArt.get(r.id);if(!im?.complete)return false;

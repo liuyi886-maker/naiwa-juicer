@@ -4,7 +4,7 @@ import {installGameGestures} from './game-gestures.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
 import {loadHunt,loadWorkshop} from './scene-assets.mjs?v=mobile-load-13';
 import {PlayerStore,snapshotGame,restoreGame} from './player-store.mjs?v=static-14';
-import {RECIPES,drawProduct,productImagePath} from './products.mjs?v=mobile-load-13';
+import {RECIPES,drawProduct,productImagePath,productImageSource} from './products.mjs?v=mobile-load-13';
 import {SPECIES,speciesFor} from './species.mjs?v=hunter-avoidance-12';
 let albumActionStart=0;
 import {compressionPose} from './compression.mjs?v=hunt-fixes-7';
@@ -211,11 +211,12 @@ function makeButtons(){const names=actor==='hunter'?{idle:'持枪待机',run:'�
 for(const b of $$('[data-actor]'))b.onclick=()=>{actor=b.dataset.actor;$$('[data-actor]').forEach(x=>x.classList.toggle('selected',x===b));makeButtons();};
 for(const b of $$('[data-hit-voice]'))b.onclick=async()=>{await audio.unlock();audio.play('preyHit',{species:b.dataset.hitVoice});};
 for(const b of $$('[data-sfx]'))b.onclick=async()=>{await audio.unlock();audio.play(b.dataset.sfx);};
+for(const art of $$('.machine-product img')){art.addEventListener('error',()=>art.classList.add('art-unavailable'));art.addEventListener('load',()=>art.classList.remove('art-unavailable'));}
 let workshopAssetState='idle';
 function prepareWorkshopArt(){
  if(workshopAssetState==='loading'||workshopAssetState==='ready')return;
  workshopAssetState='loading';$('#workshopAssetNotice').hidden=false;$('#workshopAssetMessage').textContent='正在加载工坊画面，可先操作设备';$('#retryWorkshopArt').hidden=true;
- loadWorkshop(images).then(()=>{workshopAssetState='ready';$('#workshopAssetNotice').hidden=true;}).catch(()=>{
+ loadWorkshop(images).then(()=>{workshopAssetState='ready';for(let i=0;i<2;i++)$('#productArt'+i).src=productImageSource(lab.recipe(labFloor*2+i).id);$('#workshopAssetNotice').hidden=true;}).catch(()=>{
   workshopAssetState='error';$('#workshopAssetMessage').textContent='部分画面未加载，生产与库存仍可使用';$('#retryWorkshopArt').hidden=false;
  });
 }
@@ -233,7 +234,7 @@ function updateLab(){
  $('#collectBtn').textContent=`收取营业收入 · ${lab.cash}`;$('#collectBtn').disabled=!lab.cash;
  for(let i=0;i<2;i++){const idx=labFloor*2+i,m=lab.machines[idx];
   const r=lab.recipe(idx),select=$('#recipe'+i);select.value=m.recipeId;
-  const art=$('#productArt'+i);if(art.getAttribute('src')!==productImagePath(r.id))art.src=productImagePath(r.id);art.alt=r.name;
+  const art=$('#productArt'+i);if(art.getAttribute('src')!==productImageSource(r.id))art.src=productImageSource(r.id);art.alt=r.name;
   $('#productName'+i).textContent=r.name;$('#machineLabel'+i).textContent=`设备 ${idx+1} · ${m.unlocked?'Lv.'+(m.level+1):'未购置'}`;
   $('#recipeSummary'+i).textContent=`${r.ingredient} ${r.cost} 只 → ${r.cups} 份 · ${Math.round(r.seconds/(1+m.level*.3))} 秒`;
   $('#ingredientStatus'+i).textContent=m.ends?'加工中 · 完成后自动送往店铺':`可用原料 ${lab.stocks[r.species]} 只${lab.stocks[r.species]<r.cost?' · 原料不足':''}`;

@@ -4,6 +4,8 @@
  const progress=(index,size)=>{loaded[index]=size;globalThis.naiwaStartupProgress={loaded:loaded.reduce((a,b)=>a+b,0),total};};
  globalThis.naiwaStartupProgress={loaded:0,total};
  async function download(pack,index){
+  if(globalThis.naiwaFetchBytes){try{return await globalThis.naiwaFetchBytes(pack.url,{progress:size=>progress(index,Math.min(size,pack.bytes))});}catch{return null;}}
+
   let cache;try{cache=await caches.open('naiwa-packs-v2');}catch{}
   for(let attempt=0;attempt<2;attempt++){
    const controller=new AbortController();let timer;

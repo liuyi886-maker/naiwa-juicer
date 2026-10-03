@@ -24,6 +24,7 @@ export async function prepareStartupPack(url){
 
 // Workshop art has its own immutable cache and is not on the path to starting a hunt.
 export async function prepareScenePack(url){
+ if(globalThis.naiwaFetchBytes){try{return unpackStartup(await globalThis.naiwaFetchBytes(url));}catch{return {};}}
  const controller=new AbortController();let timer;
  const reset=()=>{clearTimeout(timer);timer=setTimeout(()=>controller.abort(),15000);};
  try{

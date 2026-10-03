@@ -13,7 +13,7 @@ export class BackgroundMusic {
  setStatus(status){if(this.status!==status){this.status=status;this.onStatus(status);}}
  clearWatch(){clearTimeout(this.timer);this.timer=null;}
  watch(){if(!this.desired||this.timer)return;this.timer=setTimeout(()=>{this.timer=null;if(this.desired&&this.media.readyState<3)this.nextSource();},this.stallMs);}
- setSource(){this.clearWatch();this.generation++;this.pending=false;this.media.src=this.urls[this.index];this.setStatus('loading');}
+ setSource(){this.clearWatch();this.generation++;this.pending=false;if(this.media.src!==this.urls[this.index])this.media.src=this.urls[this.index];this.setStatus('loading');}
  nextSource(){
   this.clearWatch();if(this.index>=this.urls.length-1){this.setStatus('error');return;}
   this.index++;this.setSource();if(this.desired)this.play();

@@ -4,7 +4,7 @@ import {installGameGestures} from './game-gestures.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
 import {loadHunt,loadWorkshop} from './scene-assets.mjs?v=mobile-load-13';
 import {PlayerStore,snapshotGame,restoreGame} from './player-store.mjs?v=static-14';
-import {RECIPES,drawProduct,productImagePath,productImageSource} from './products.mjs?v=mobile-load-13';
+import {RECIPES,drawProduct,productImageSource} from './products.mjs?v=mobile-load-13';
 import {SPECIES,speciesFor} from './species.mjs?v=hunter-avoidance-12';
 let albumActionStart=0;
 import {compressionPose} from './compression.mjs?v=hunt-fixes-7';
@@ -23,6 +23,7 @@ const pauseMenuReady=preparePauseMenu($('#pauseMenuArt'),$('.pause-art-panel'));
 const images={};let assetsLoaded=false,loadGeneration=0;
 function load(){const generation=++loadGeneration;return loadHunt(images,(done,total)=>{if(generation!==loadGeneration)return;window.naiwaLoader?.progress(done,total);$('#saveStatus').textContent=`正在准备捕猎素材 ${Math.round(done/total*100)}%`;});}
 // Start art downloads while the cloud save is being read, rather than afterwards.
+let workshopLoad=loadWorkshop(images);workshopLoad.catch(()=>{});
 let huntLoad=load();huntLoad.catch(()=>{});
 const playerStore=new PlayerStore();
 const initialSave=await playerStore.init();
@@ -258,11 +259,11 @@ for(let i=0;i<2;i++)$('#changeRecipe'+i).onclick=()=>{
  const idx=labFloor*2+i;$('#recipeDialogTitle').textContent=`设备 ${idx+1} · 选择产品`;
  const list=$('#recipeChoices');list.replaceChildren();
  for(const r of RECIPES){const b=document.createElement('button');b.className='recipe-choice';b.classList.toggle('selected',lab.machines[idx].recipeId===r.id);
- b.innerHTML=`<img src="${productImagePath(r.id)}" alt=""><b>${r.name}</b><span>${r.ingredient} ${r.cost} 只 → ${r.cups} 份</span><small>库存 ${lab.stocks[r.species]} 只 · ${lab.stocks[r.species]>=r.cost?'可以生产':'原料不足'}</small>`;
+ b.innerHTML=`<img src="${productImageSource(r.id)}" alt=""><b>${r.name}</b><span>${r.ingredient} ${r.cost} 只 → ${r.cups} 份</span><small>库存 ${lab.stocks[r.species]} 只 · ${lab.stocks[r.species]>=r.cost?'可以生产':'原料不足'}</small>`;
  b.onclick=()=>{if(lab.selectRecipe(idx,r.id)){save();updateLab();audio.play('click');}$('#recipeDialog').close();$('#changeRecipe'+i).focus();};list.append(b);}
  $('#recipeDialog').showModal();
 };
-$('#productsBtn').onclick=()=>{const list=$('#productList');list.replaceChildren();for(const r of RECIPES){const card=document.createElement('article'),icon=document.createElement('img');icon.src=productImagePath(r.id);icon.alt=r.name;icon.width=220;icon.height=220;const title=document.createElement('h3');title.textContent=r.name;const detail=document.createElement('p');detail.textContent=`${r.ingredient} ${r.cost} 只 → ${r.cups} 份 · ${r.seconds} 秒 · 单价 ${r.price} 金币`;const stock=document.createElement('b');stock.textContent=`原料 ${lab.stocks[r.species]} 只 / 成品 ${lab.products[r.id]} 份`;card.append(icon,title,detail,stock);list.append(card);}$('#productsDialog').showModal();};
+$('#productsBtn').onclick=()=>{const list=$('#productList');list.replaceChildren();for(const r of RECIPES){const card=document.createElement('article'),icon=document.createElement('img');icon.src=productImageSource(r.id);icon.alt=r.name;icon.width=220;icon.height=220;const title=document.createElement('h3');title.textContent=r.name;const detail=document.createElement('p');detail.textContent=`${r.ingredient} ${r.cost} 只 → ${r.cups} 份 · ${r.seconds} 秒 · 单价 ${r.price} 金币`;const stock=document.createElement('b');stock.textContent=`原料 ${lab.stocks[r.species]} 只 / 成品 ${lab.products[r.id]} 份`;card.append(icon,title,detail,stock);list.append(card);}$('#productsDialog').showModal();};
 $('#closeProducts').onclick=()=>$('#productsDialog').close();
 $('#processBtn').onclick=openLab;$('#openLabPause').onclick=openLab;$('#openLabIntro').onclick=openLab;
 $('#labTab').onclick=$('#toLabBtn').onclick=()=>showLab(false);$('#shopTab').onclick=()=>showLab(true);
@@ -335,9 +336,9 @@ function frame(ms){
  requestAnimationFrame(frame);
 }
 makeButtons();updateBank();$('#touchControls').classList.add('hidden');$('#statusBar').classList.add('hidden');requestAnimationFrame(frame);
-function finishLoading(promise){Promise.all([promise,pauseMenuReady]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
+function finishLoading(promise){Promise.all([promise,pauseMenuReady,workshopLoad]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
 finishLoading(huntLoad);
-$('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
+$('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;workshopLoad=loadWorkshop(images);workshopLoad.catch(()=>{});huntLoad=load();finishLoading(huntLoad);};
 
 playerStore.beforeLeave=()=>{save();if(running)rememberRound();};
 document.addEventListener('visibilitychange',()=>{if(document.hidden){save();if(running)rememberRound();}});

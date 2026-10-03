@@ -1,11 +1,13 @@
 import {BackgroundMusic} from './background-music.mjs';
-import {embeddedAudio,audioMirrors} from './audio-files.mjs';
+import {embeddedAudio,audioMirrors,embeddedMusicUrl} from './audio-files.mjs';
 import {downloadAudio} from './audio-download.mjs';
 import {TAUNT_DURATION,TAUNT_AUDIO_OFFSET} from './taunt.mjs?v=hunt-fixes-7';
 // User-approved original clips; numbers refer to the audition order.
 export const HIT_VOICE_FILES=Object.freeze({basic:'05-andi.wav',bird:'04-oula.wav',hopper:'02-gajiaosai.wav',shell:'03-gangbadi.wav',longbody:'01-gagadilaxi.wav'});
 export class AudioEngine {
- constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();}
+ constructor(){this.enabled=true;this.ctx=null;this.last={};this.laugh=null;this.music=null;this.hitBuffers={};this.pending=new Map();this.noiseBuffers=new Map();
+  if(embeddedMusicUrl&&typeof Audio==='function'){this.preparedMusic=new Audio();this.preparedMusic.preload='auto';this.preparedMusic.crossOrigin='anonymous';this.preparedMusic.loop=true;this.preparedMusic.playsInline=true;this.preparedMusic.src=embeddedMusicUrl;this.preparedMusic.load();}
+ }
  loadBuffer(url){
   if(this.pending.has(url))return this.pending.get(url);
   const task=(async()=>{
@@ -42,7 +44,7 @@ export class AudioEngine {
    const Context=window.AudioContext||window.webkitAudioContext;if(!Context)return Promise.resolve();
    this.ctx=new Context();this.effects=this.ctx.createGain();this.effects.connect(this.ctx.destination);
    this.musicGain=this.ctx.createGain();this.musicGain.gain.value=0;this.musicGain.connect(this.ctx.destination);this.duckUntil=0;
-   this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:'assets/audio/naiwaxxl-bgm-original.mp3',mirrors:audioMirrors,onStatus:status=>this.onMusicStatus?.(status)});
+   this.music=new BackgroundMusic(this.ctx,this.musicGain,{url:embeddedMusicUrl||'assets/audio/naiwaxxl-bgm-original.mp3',mirrors:embeddedMusicUrl?[]:audioMirrors,...(this.preparedMusic?{audioFactory:()=>this.preparedMusic}:{}),onStatus:status=>this.onMusicStatus?.(status)});
    this.ctx.onstatechange=()=>{if(this.ctx.state==='running'){this.effectsTarget=undefined;this.musicTarget=undefined;}};
   }
   this.resume();if(typeof document==='undefined'||!document.hidden)this.music?.play({retry:true});

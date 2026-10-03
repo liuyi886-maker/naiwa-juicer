@@ -112,6 +112,7 @@
 @media(orientation:portrait){
  body.game-entered .game-shell{position:fixed;left:50%;top:50%;width:min(100dvh,177.77778dvw);height:min(100dvw,56.25dvh);transform:translate(-50%,-50%) rotate(90deg);flex-shrink:0}
  body.game-entered dialog[open]{position:fixed;inset:auto;left:50%;top:50%;margin:0;transform:translate(-50%,-50%) rotate(90deg);width:min(850px,88dvh);max-width:88dvh;max-height:90dvw}
+ body.game-entered #productsDialog[open]{width:min(1140px,94dvh);max-width:94dvh;max-height:90dvw}
  body.game-entered #recipeDialog{width:min(1050px,94dvh);max-width:94dvh;max-height:90dvw}
  body.game-entered #preview{max-height:42dvw}
 }

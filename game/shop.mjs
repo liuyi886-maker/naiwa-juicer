@@ -20,7 +20,7 @@ function shopper(c,atlas,id,x,y,t,walking=false,drink=false,alpha=1,product=RECI
  c.save();c.globalAlpha=alpha;oval(c,x,y+1,35,7,'#233d3a44');
  if(drink){c.translate(x*2,0);c.scale(-1,1);}
  const bounce=walking?Math.abs(Math.sin(t*10))*3:Math.sin(t*2+id)*1;
- if(atlas?.complete&&atlas.naturalWidth){const sw=atlas.width/3,sh=atlas.height-40,w=172*sw/sh;c.drawImage(atlas,(id%3)*sw,20,sw,sh,x-w/2,y-172-bounce,w,172);}
+ if(atlas?.complete&&atlas.naturalWidth){const padding=atlas.height*20/1024,sw=atlas.width/3,sh=atlas.height-padding*2,w=172*sw/sh;c.drawImage(atlas,(id%3)*sw,padding,sw,sh,x-w/2,y-172-bounce,w,172);}
  if(drink)drawProduct(c,product,x-29,y-81-bounce,.7);
  c.restore();
 }

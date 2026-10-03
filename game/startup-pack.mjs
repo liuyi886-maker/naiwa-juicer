@@ -13,6 +13,7 @@ export async function prepareStartupPack(url){
  try{
   const buffer=await (globalThis.naiwaStartupDownload||fetch(url).then(r=>{if(!r.ok)throw new Error('Startup download failed');return r.arrayBuffer();}));
   if(!buffer)return {};
+  if(Array.isArray(buffer))return Object.assign({},...buffer.filter(Boolean).map(bytes=>unpackStartup(bytes)));
   return unpackStartup(buffer);
  }catch(error){
   // A malformed response must not poison every future visit's cached pack.

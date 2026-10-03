@@ -1,8 +1,8 @@
-const CACHE='naiwa-static-82741690f635';
+const CACHE='naiwa-static-8e29587cd61e';
 const PREFIX='naiwa-static-';
 const scope=new URL(self.registration.scope);
 self.addEventListener('install',event=>{
- event.waitUntil(caches.open(CACHE).then(cache=>Promise.allSettled([scope.href,...['game/app-UKC33MAM.mjs','assets/instant-v1/title-screen.webp','assets/instant-v1/title-mobile.webp','assets/instant-v1/bgm.mp3'].map(path=>new URL(path,scope).href)].map(url=>cache.add(new Request(url,{cache:'force-cache'}))))).catch(()=>{}).then(()=>self.skipWaiting()));
+ event.waitUntil(caches.open(CACHE).then(cache=>Promise.allSettled([scope.href,...['game/app-3EJKEEDE.mjs','assets/instant-v1/title-screen.webp','assets/instant-v1/title-mobile.webp','assets/instant-v1/bgm.mp3'].map(path=>new URL(path,scope).href)].map(url=>cache.add(new Request(url,{cache:'force-cache'}))))).catch(()=>{}).then(()=>self.skipWaiting()));
 });
 self.addEventListener('activate',event=>{
  event.waitUntil((async()=>{const keys=(await caches.keys()).filter(k=>k.startsWith(PREFIX));for(const key of keys.slice(0,-2))if(key!==CACHE)await caches.delete(key);await self.clients.claim();})());

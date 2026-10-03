@@ -155,3 +155,10 @@ dialog button{touch-action:manipulation}
 .pause-art-panel:not(.art-ready) .pause-tile span{bottom:42%}
 .pause-art-panel:not(.art-ready) .pause-resume{background:linear-gradient(#ffe887,#e5b62c);box-shadow:0 4px #0c2d24;padding-left:0}
 .pause-art-panel:not(.art-ready) .pause-restart{background:#335e40;border:2px solid #80905d;padding-left:0}
+
+/* Empty bait remains tappable and exposes the real simulation countdown. */
+#baitSupplyStatus{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);white-space:nowrap;padding:.5cqw .8cqw;border:1px solid #e7c76b;border-radius:.7cqw;background:#183e35;color:#ffe68d;font-size:1.45cqw;font-weight:900;pointer-events:none}
+.bait-button.awaiting-supply svg{opacity:.55}
+#workshopAssetNotice{position:absolute;top:15%;left:25%;right:25%;z-index:2;text-align:center;background:#163d34e8;border-radius:1cqw;padding:.4cqw .8cqw;color:#ffe8a1;font-size:1.2cqw}
+#workshopAssetNotice[hidden],#retryWorkshopArt[hidden],#baitSupplyStatus[hidden]{display:none}
+#workshopAssetNotice button{font-size:1.1cqw;padding:.3cqw .7cqw;margin-left:.6cqw}

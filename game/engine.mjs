@@ -2,6 +2,7 @@ import {speciesFor,ENCOUNTER_SPECIES,capturePoint,escapeSpeed,birdFlightHeight} 
 import {TAUNT_DURATION,TAUNT_APPROACH,ESCAPE_JUMP_DURATION,escapeJumpOffset} from './taunt.mjs?v=hunt-fixes-7';
 import {approach,updatePose} from './motion.mjs?v=hunt-fixes-7';
 import {EMERGE_SECONDS} from './emergence.mjs?v=hunt-fixes-7';
+export const BAIT_SUPPLY_SECONDS = 10;
 export const HIT_SLOW = {duration:.35,reduction:.25};
 export const MUZZLE = {x:79,y:-84};
 export const WORLD = { width: 9200, floor: 480, gravity: 1200 };
@@ -40,7 +41,7 @@ export class Game {
     this.level=level; this.onEvent=onEvent; this.reset();
   }
   reset() {
-    this.time=0; this.caught=0; this.escaped=0; this.finished=false; this.baitCount=8;
+    this.time=0; this.caught=0; this.escaped=0; this.finished=false; this.baitCount=8;this.baitSupplyRemaining=null;
     this.player={x:190,y:WORLD.floor,vx:0,vy:0,dir:1,fuel:100,grounded:true,stun:0,cooldown:0,shot:0,stride:0,lastSafe:190,charging:false,charge:0,invulnerable:0};
     this.prey=PONDS.map((x,id)=>({id,x,y:groundAt(x),vy:0,grounded:true,stride:0,home:x,state:'hidden',timer:0,dir:-1,anim:0,escapeTime:0,turnLock:0,hitsLanded:0,flying:false,flightTime:0,species:ENCOUNTER_SPECIES[id],resistance:speciesFor({species:ENCOUNTER_SPECIES[id]}).hits-1,hitFlash:0,hitSlow:0}));
     this.dogs=[550,4040,6160,9020].map((x,id)=>({id,x,y:groundAt(x),home:x,dir:id%2?-1:1,state:'patrol',timer:0,stride:0,vy:0,grounded:true}));
@@ -54,10 +55,14 @@ export class Game {
     this.emit('escaped',{id:z.id,species:z.species,reason,escaped:this.escaped,remaining:this.remaining});return true;
   }
   emit(type,data={}) { const e={type,...data};this.events.push(e);this.onEvent(e); }
+  get baitSupplySeconds(){return !this.finished&&this.remaining>0&&this.baitCount===0?Math.ceil(this.baitSupplyRemaining??BAIT_SUPPLY_SECONDS):0;}
   dropBait() {
     const p=this.player;
-    if(this.finished||this.baitCount<=0||this.baitCooldown>0||p.stun>0) return false;
+    if(this.finished)return false;
+    if(this.baitCount<=0){if(this.remaining>0)this.baitSupplyRemaining??=BAIT_SUPPLY_SECONDS;this.emit('baitEmpty',{seconds:this.baitSupplySeconds});return false;}
+    if(this.baitCooldown>0||p.stun>0) return false;
     this.baitCount--;this.baitCooldown=.7;
+    if(this.baitCount===0&&this.remaining>0)this.baitSupplyRemaining=BAIT_SUPPLY_SECONDS;
     // Start outside the hunter, but sweep the hand-to-release path against walls.
     const bait={x:p.x,y:p.y-55,vx:240*p.dir,vy:-220,life:22,landed:false};
     moveSolid(bait,24*p.dir,0,14,39);
@@ -295,6 +300,9 @@ export class Game {
     if(this.delivered+this.escaped===this.prey.length&&this.ship.phase==='standby'){
       this.completeTimer+=dt;if(this.completeTimer>.5){this.finished=true;this.emit('complete',{caught:this.caught,delivered:this.delivered,escaped:this.escaped,total:this.prey.length});}
     }
-    if(this.baitCount===0&&this.baits.length===0&&this.prey.some(z=>z.state==='hidden')){this.baitCount=2;this.emit('resupply');}
+    if(!this.finished&&this.remaining>0&&this.baitCount===0){
+      this.baitSupplyRemaining=Math.max(0,(this.baitSupplyRemaining??BAIT_SUPPLY_SECONDS)-dt);
+      if(this.baitSupplyRemaining<1e-6){this.baitCount=2;this.baitSupplyRemaining=null;this.emit('resupply');}
+    }else this.baitSupplyRemaining=null;
   }
 }

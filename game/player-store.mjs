@@ -1,12 +1,12 @@
 export const SAVE_KEY='peach-catcher-save';
 const GAME_FIELDS=['level','time','caught','escaped','finished','baitCount','player','prey','dogs','delivered','ship','baits','shots','baitCooldown','completeTimer'];
-export function snapshotGame(game){return JSON.parse(JSON.stringify(Object.fromEntries(GAME_FIELDS.map(k=>[k,game[k]]))));}
+export function snapshotGame(game){return JSON.parse(JSON.stringify({...Object.fromEntries(GAME_FIELDS.map(k=>[k,game[k]])),baitSupplyRemaining:game.baitSupplyRemaining??null}));}
 export function restoreGame(game,value){
  if(!value||value.finished||!Array.isArray(value.prey)||value.prey.length!==8||!value.player||!Array.isArray(value.shots)||!Array.isArray(value.baits)||!Array.isArray(value.dogs)||!value.ship)return false;
  if(!Number.isFinite(value.player.x)||!Number.isFinite(value.player.y)||!Number.isFinite(value.time)||value.player.x<0||value.player.x>9200)return false;
  if(value.prey.some((z,i)=>z.id!==i||!['basic','hopper','bird','shell','longbody'].includes(z.species)||!Number.isFinite(z.x)||!Number.isFinite(z.y)))return false;
  for(const k of GAME_FIELDS)if(!(k in value))return false;
- for(const k of GAME_FIELDS)game[k]=structuredClone(value[k]);game.events=[];game.cancelCharge();return true;
+ for(const k of GAME_FIELDS)game[k]=structuredClone(value[k]);game.baitSupplyRemaining=Number.isFinite(value.baitSupplyRemaining)&&value.baitSupplyRemaining>=0?value.baitSupplyRemaining:null;game.events=[];game.cancelCharge();return true;
 }
 // Local-only adapter. Shared snapshot/restore helpers are prepended by build-static.mjs.
 export class PlayerStore {

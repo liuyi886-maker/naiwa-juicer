@@ -42,7 +42,9 @@ function rememberRound(status,state=game,meta=currentRound){const record=roundRe
 function save(){if(playerStore.conflict)return;const active=running&&!game.finished&&currentRound?{...currentRound,game:snapshotGame(game)}:savedRound;playerStore.save({bank,level,lab:lab.serialize(),round:active,history:roundHistory,sound:audio.enabled});updateBank();}
 playerStore.onStatus=message=>{if(assetsLoaded&&$('#saveStatus'))$('#saveStatus').textContent=message;if(playerStore.conflict){togglePause(true);toast(message);}};
 function updateBank(){$('#coins').textContent=bank;$('#levelLabel').textContent=`Lv.${level+1}`;$('#upgradeBtn').textContent=level>=3?'装填速度已升满':`升级装填速度 · ${80+level*40} 金币`;$('#upgradeBtn').disabled=level>=3||bank<80+level*40;}
-function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');toastTimer=3;}
+let toastKind='';
+function baitSupplyMessage(){return game.baitSupplySeconds?`黄桃罐头已用完，补给还剩 ${game.baitSupplySeconds} 秒送达`:'黄桃罐头已用完，本关目标已全部处理';}
+function toast(s){toastKind='';$('#toast').textContent=s;$('#toast').classList.add('show');toastTimer=3;}
 const game=new Game({level,onEvent:e=>{
  audio.play(e.type,e);
  if(e.type==='startle')audio.voice('alert');
@@ -57,7 +59,8 @@ const game=new Game({level,onEvent:e=>{
  if(e.type==='dogRepelled'){bank+=e.coins;save();burst(e.x,e.y-35,'#ffe06b',12);toast('小狗退开了 · +10 金币');}
  if(e.type==='hurt'){shake=8;toast(e.source==='dog'?'被小狗撞晕了！跳起躲避，或用鱼叉驱退':'被撞到了，稍等一下！');}
  if(e.type==='complete'){$('#resultTitle').textContent=game.escaped===0?'满载而归！':game.delivered?'本次捕猎结束':'这次都逃走了';$('#resultSummary').textContent=`本关共 ${game.prey.length} 只 · 回收 ${game.delivered} 只 · 逃走 ${game.escaped} 只。${game.delivered?'已回收的角色送入加工库存。':'没有获得加工原料，下次再试。'}`;$('#resultNumber').textContent=game.delivered;lab.addCaptured(game.prey);running=false;savedRound=null;rememberRound('completed');save();$('#resultOverlay').classList.remove('hidden');}
- if(e.type==='resupply')toast('补给送达：黄桃罐头 +2');
+ if(e.type==='baitEmpty'){toast(baitSupplyMessage());toastKind='bait';}
+ if(e.type==='resupply')toast('补给送达：黄桃罐头 +2，可以继续投放了');
 }});
 
 function round(ctx,x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
@@ -171,7 +174,7 @@ function render(t){
  for(const a of catchLabels){c.save();c.translate(a.x,a.y);c.rotate(-.06);c.globalAlpha=Math.min(1,a.life*2);c.font='900 43px Impact,Arial';c.textAlign='center';c.lineWidth=6;c.strokeStyle='#101715';c.strokeText('CATCH!',0,0);c.fillStyle='#ffe455';c.fillText('CATCH!',0,0);c.restore();}
  c.restore();
 }
-function updateHud(){$('#huntRemaining').textContent=`剩余 ${game.remaining} · 逃走 ${game.escaped}`;$('#score').textContent=`${game.caught} / ${game.prey.length}`;$('#captureFill').style.width=`${game.caught/game.prey.length*100}%`;$('#baitCount').textContent=game.baitCount;$('#fuelFill').style.width=`${game.player.fuel}%`;$('#reload').textContent=game.player.charging?(game.player.charge>=.85?'蓄力完成':'按住蓄力…'):game.shots.length?(game.shots[0].phase==='outbound'?'鱼叉飞行中':game.shots[0].phase==='tethered'?'等待气球接管':'正在收回鱼叉'):game.player.cooldown>0?`装填中 · ${game.player.cooldown.toFixed(1)} 秒`:'按住蓄力';$('#fireButton').classList.toggle('busy',!!game.shots.length||game.player.cooldown>0);$('#fireButton').classList.toggle('reloading',game.player.cooldown>0);$('#fireButton').style.setProperty('--reload-progress',`${(1-game.player.cooldown/(game.player.reloadDuration||1))*100}%`);$('#fireButton').setAttribute('aria-disabled',String(!!game.shots.length||game.player.cooldown>0));$('#fireButton').classList.toggle('charging',game.player.charging);$('#fireButton').style.setProperty('--charge',`${Math.min(1,game.player.charge/.85)*100}%`);}
+function updateHud(){const seconds=game.baitSupplySeconds;const bait=$('[data-action="bait"]');$('#baitSupplyStatus').hidden=!seconds;$('#baitSupplyStatus').textContent=seconds?`补给 ${seconds} 秒`:'';bait.classList.toggle('awaiting-supply',!!seconds);bait.setAttribute('aria-label',seconds?baitSupplyMessage():`投放黄桃罐头，剩余 ${game.baitCount} 罐`);if(toastKind==='bait'&&toastTimer>0)$('#toast').textContent=baitSupplyMessage();$('#huntRemaining').textContent=`剩余 ${game.remaining} · 逃走 ${game.escaped}`;$('#score').textContent=`${game.caught} / ${game.prey.length}`;$('#captureFill').style.width=`${game.caught/game.prey.length*100}%`;$('#baitCount').textContent=game.baitCount;$('#fuelFill').style.width=`${game.player.fuel}%`;$('#reload').textContent=game.player.charging?(game.player.charge>=.85?'蓄力完成':'按住蓄力…'):game.shots.length?(game.shots[0].phase==='outbound'?'鱼叉飞行中':game.shots[0].phase==='tethered'?'等待气球接管':'正在收回鱼叉'):game.player.cooldown>0?`装填中 · ${game.player.cooldown.toFixed(1)} 秒`:'按住蓄力';$('#fireButton').classList.toggle('busy',!!game.shots.length||game.player.cooldown>0);$('#fireButton').classList.toggle('reloading',game.player.cooldown>0);$('#fireButton').style.setProperty('--reload-progress',`${(1-game.player.cooldown/(game.player.reloadDuration||1))*100}%`);$('#fireButton').setAttribute('aria-disabled',String(!!game.shots.length||game.player.cooldown>0));$('#fireButton').classList.toggle('charging',game.player.charging);$('#fireButton').style.setProperty('--charge',`${Math.min(1,game.player.charge/.85)*100}%`);}
 let touchInput;
 function clearInput(){touchInput?.reset();game.cancelCharge();for(const k in input){input[k]=false;pulses[k]=0;}$$('[data-hold]').forEach(b=>b.classList.remove('pressed'));}
 function togglePause(force){if(!running||scene!=='hunt')return;paused=force??!paused;clearInput();$('#pauseOverlay').classList.toggle('hidden',!paused);save();}
@@ -208,14 +211,19 @@ function makeButtons(){const names=actor==='hunter'?{idle:'持枪待机',run:'�
 for(const b of $$('[data-actor]'))b.onclick=()=>{actor=b.dataset.actor;$$('[data-actor]').forEach(x=>x.classList.toggle('selected',x===b));makeButtons();};
 for(const b of $$('[data-hit-voice]'))b.onclick=async()=>{await audio.unlock();audio.play('preyHit',{species:b.dataset.hitVoice});};
 for(const b of $$('[data-sfx]'))b.onclick=async()=>{await audio.unlock();audio.play(b.dataset.sfx);};
-let openingWorkshop=false;
-async function openLab(){
- if(openingWorkshop)return;openingWorkshop=true;
- const wasPaused=paused;paused=true;clearInput();audio.unlock();toast('正在准备工坊…');
- try{await loadWorkshop(images);}catch(error){paused=wasPaused;openingWorkshop=false;toast('工坊素材暂时无法加载，请再点一次重试');console.error(error);return;}
- openingWorkshop=false;
- document.body.classList.add('game-entered');$('#intro').classList.add('hidden');setLabFocus(true);clearInput();paused=true;scene='lab';$('#workshop').classList.remove('hidden');$('#resultOverlay').classList.add('hidden');$('#pauseOverlay').classList.add('hidden');showLab(false);$('#labStatus').textContent=lab.machines.some(m=>m.ends)?'机器正在生产；返回捕猎后也会继续。':lab.stock?'选择设备装料，完成后自动送往地面店铺。':'先去捕猎，把回收的角色送进库存。';$('#labTab').focus();audio.unlock();
+let workshopAssetState='idle';
+function prepareWorkshopArt(){
+ if(workshopAssetState==='loading'||workshopAssetState==='ready')return;
+ workshopAssetState='loading';$('#workshopAssetNotice').hidden=false;$('#workshopAssetMessage').textContent='正在加载工坊画面，可先操作设备';$('#retryWorkshopArt').hidden=true;
+ loadWorkshop(images).then(()=>{workshopAssetState='ready';$('#workshopAssetNotice').hidden=true;}).catch(()=>{
+  workshopAssetState='error';$('#workshopAssetMessage').textContent='部分画面未加载，生产与库存仍可使用';$('#retryWorkshopArt').hidden=false;
+ });
 }
+function openLab(){
+ document.body.classList.add('game-entered');$('#intro').classList.add('hidden');setLabFocus(true);clearInput();paused=true;scene='lab';$('#workshop').classList.remove('hidden');$('#resultOverlay').classList.add('hidden');$('#pauseOverlay').classList.add('hidden');showLab(false);$('#labTab').focus();audio.unlock();prepareWorkshopArt();
+}
+$('#retryWorkshopArt').onclick=prepareWorkshopArt;
+
 function showLab(shop){scene=shop?'shop':'lab';$('#workshop').classList.toggle('is-shop',shop);$('#labStatus').classList.toggle('hidden',shop);$('#labTab').classList.toggle('selected',!shop);$('#shopTab').classList.toggle('selected',shop);$('#machineControls').classList.toggle('hidden',shop);$('#labFloors').classList.toggle('hidden',shop);$('#shopActions').classList.toggle('hidden',!shop);updateLab();}
 function updateLab(){
  $('#labStatus').textContent=lab.machines.some(m=>m.ends)?'加工进行中 · 返回捕猎后也会继续生产':lab.stock?'选择设备装料，完成后自动送往地面店铺。':'先去捕猎，把回收的角色送进库存。';
@@ -277,7 +285,7 @@ document.addEventListener('keydown',e=>{
  if(!running||paused)return;
  if(keys[e.code]||['KeyJ','KeyK'].includes(e.code))autoplay=false;
  if(keys[e.code])input[keys[e.code]]=true;
- if(e.code==='KeyJ'&&!e.repeat)game.beginCharge();if(e.code==='KeyK'&&!e.repeat){if(!game.dropBait()&&game.baitCount===0)toast('罐头用完了，先追捕已出现的角色');}
+ if(e.code==='KeyJ'&&!e.repeat)game.beginCharge();if(e.code==='KeyK'&&!e.repeat)game.dropBait();
 });
 document.addEventListener('keyup',e=>{if(keys[e.code])input[keys[e.code]]=false;if(e.code==='KeyJ'&&running&&!paused)game.releaseCharge();});
 window.addEventListener('blur',()=>{clearInput();if(running)togglePause(true);});

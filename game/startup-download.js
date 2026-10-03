@@ -26,10 +26,12 @@
   }
   return null; // Only missing entries fall back to their individual image files.
  }
- globalThis.naiwaStartupDownload=(async()=>{
+ const start=async()=>{
   const results=new Array(packs.length);let next=0;
   await Promise.all(Array.from({length:Math.min(3,packs.length)},async()=>{while(next<packs.length){const index=next++;results[index]=await download(packs[index],index);}}));
   try{const cache=await caches.open('naiwa-packs-v2'),keys=await cache.keys(),current=new Set(packs.map(p=>new URL(p.url,location.href).href));for(const key of keys.filter(k=>!current.has(k.url)).slice(0,-12))await cache.delete(key);}catch{}
   return results;
- })();
+ };
+ globalThis.naiwaRestartDownload=()=>globalThis.naiwaStartupDownload=start();
+ globalThis.naiwaRestartDownload();
 })();

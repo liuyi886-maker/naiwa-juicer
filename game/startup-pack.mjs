@@ -12,10 +12,12 @@ export function unpackStartup(buffer,{makeURL=blob=>URL.createObjectURL(blob)}={
 export async function prepareStartupPack(url){
  try{
   const buffer=await (globalThis.naiwaStartupDownload||fetch(url).then(r=>{if(!r.ok)throw new Error('Startup download failed');return r.arrayBuffer();}));
+  if(globalThis.naiwaFetchBytes&&Array.isArray(buffer)&&buffer.every(b=>!b))throw Error('资源线路暂时不可用，请重试加载');
   if(!buffer)return {};
   if(Array.isArray(buffer))return Object.assign({},...buffer.filter(Boolean).map(bytes=>unpackStartup(bytes)));
   return unpackStartup(buffer);
  }catch(error){
+  if(globalThis.naiwaFetchBytes)throw error;
   // A malformed response must not poison every future visit's cached pack.
   try{await (await caches.open('naiwa-packs-v1')).delete(url);}catch{}
   console.warn('Startup pack unavailable; retrying individual assets',error.message);return {};

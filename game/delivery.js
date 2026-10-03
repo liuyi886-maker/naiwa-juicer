@@ -1,6 +1,7 @@
 // Verified failover for the program and artwork. Never execute a partially downloaded script.
 (()=>{
  const manifest=__DELIVERY_MANIFEST__,bases=[new URL('.',location.href).href,'https://fastly.jsdelivr.net/gh/liuyi886-maker/naiwa-juicer@gh-pages/'];
+ window.naiwaCDNBases=bases.slice(1);
  let preferred=0;const pending=new Map();
  window.naiwaDelivery={events:[],preferred:0};
  const log=(path,event,source)=>{const list=window.naiwaDelivery.events;list.push({path,event,source,at:Math.round(performance.now())});if(list.length>80)list.shift();};

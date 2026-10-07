@@ -1,4 +1,4 @@
-import {trackGameStart} from './analytics.mjs';
+import {trackGameStart,scheduleAnalytics} from './analytics.mjs';
 import {preparePauseMenu} from './pause-menu.mjs';
 import {installGameGestures} from './game-gestures.mjs';
 import {bindTouchControls} from './touch-controls.mjs';
@@ -226,7 +226,7 @@ function prepareWorkshopArt(){
   workshopAssetState='error';$('#workshopAssetMessage').textContent='工坊画面连接较慢，请重试；进度已保留';$('#retryWorkshopArt').hidden=false;
  });
 }
-function openLab(){
+function openLab(){trackGameStart();
  document.body.classList.add('game-entered');$('#intro').classList.add('hidden');setLabFocus(true);clearInput();paused=true;scene='lab';$('#workshop').classList.remove('hidden');$('#resultOverlay').classList.add('hidden');$('#pauseOverlay').classList.add('hidden');showLab(false);$('#labTab').focus();audio.unlock();prepareWorkshopArt();
 }
 $('#retryWorkshopArt').onclick=prepareWorkshopArt;
@@ -341,7 +341,7 @@ function frame(ms){
  requestAnimationFrame(frame);
 }
 makeButtons();updateBank();$('#touchControls').classList.add('hidden');$('#statusBar').classList.add('hidden');requestAnimationFrame(frame);
-function finishLoading(promise){Promise.all([promise,pauseMenuReady]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);setTimeout(prepareWorkshopArt,300);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
+function finishLoading(promise){Promise.all([promise,pauseMenuReady]).then(()=>{assetsLoaded=true;window.naiwaLoader?.ready();scheduleAnalytics();$('#retryAssets').hidden=true;$('#startBtn').setAttribute('aria-label',savedRound?'继续捕猎':'开始捕猎');$('#continueHint').classList.toggle('hidden',!savedRound);$('#startBtn').disabled=false;$('#demoBtn').disabled=false;$('#openLabIntro').disabled=false;$('#saveStatus').textContent=playerStore.ready?'进度保存在此浏览器 · 请勿清除网站数据':'浏览器无法保存进度，请勿关闭页面';render(0);setTimeout(prepareWorkshopArt,300);}).catch(e=>{window.naiwaLoader?.error();$('#saveStatus').textContent='部分素材暂时无法加载，可重试';$('#retryAssets').hidden=false;console.error(e);});}
 finishLoading(huntLoad);
 $('#retryAssets').onclick=()=>{window.naiwaLoader?.retry();$('#retryAssets').hidden=true;huntLoad=load();finishLoading(huntLoad);};
 

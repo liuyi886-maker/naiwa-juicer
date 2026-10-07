@@ -1,2 +1,2 @@
-// Empty until the owner has created their free GoatCounter account.
-export const analyticsSite = '';
+// Public statistics site code; never store account credentials here.
+export const analyticsSite = 'naiwa-liuyi61';
